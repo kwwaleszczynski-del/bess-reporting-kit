@@ -16,13 +16,14 @@ import pandas as pd
 
 from bess_report import figures as F
 from bess_report.financial import revenue_mix, variance
-from bess_report.render import fmt, img, note, page, section, table_html, write_excel
+from bess_report.render import fmt, img, note, page, section, table_html, tiles, write_excel
 from bess_report.schema import LINES, REVENUE_LINES
 from bess_report.technical import TechnicalReport
 
 def save_figures(figs: dict, out_dir: Path, prefix: str) -> dict:
-    """Write every chart to ``out_dir/img/<prefix>_<name>.png``; returns name -> path."""
-    return {n: F.save(f, out_dir / "img" / f"{prefix}_{n}.png") for n, f in figs.items()}
+    """Draw every chart (``figs``: name -> function returning a figure) in the light and the dark theme into
+    ``out_dir/img/<prefix>_<name>.png`` and ``..._dark.png``; returns name -> path of the light one."""
+    return {n: F.save_themed(b, out_dir / "img" / f"{prefix}_{n}.png") for n, b in figs.items()}
 
 
 def ref(images: dict, name: str) -> str:
@@ -86,14 +87,14 @@ def _kpi_html(k: pd.DataFrame) -> str:
 
 def technical_report(rep: TechnicalReport, guarantees: dict | None, out_dir: Path, tag: str) -> dict:
     guarantees = guarantees or rep.guarantees
-    figs = {"availability": F.availability_chart(rep.monthly, guarantees.get("availability")),
-            "rte": F.rte_chart(rep.monthly, guarantees.get("rte"))}
+    figs = {"availability": lambda: F.availability_chart(rep.monthly, guarantees.get("availability")),
+            "rte": lambda: F.rte_chart(rep.monthly, guarantees.get("rte"))}
     if rep.soh is not None and "calendar_loss" in rep.soh:
-        figs["soh"] = F.soh_chart(rep.soh)
+        figs["soh"] = lambda: F.soh_chart(rep.soh)
     res = rep.extras.get("result")
     aux_bins = None if res is None else (res.get("aux") or {}).get("bins")
     if aux_bins is not None and len(aux_bins):
-        figs["aux"] = F.aux_chart(aux_bins.iloc[:, [0]] if isinstance(aux_bins, pd.DataFrame) else aux_bins)
+        figs["aux"] = lambda: F.aux_chart(aux_bins.iloc[:, [0]] if isinstance(aux_bins, pd.DataFrame) else aux_bins)
     kpis = kpi_table(rep, guarantees)
     images = save_figures(figs, out_dir, f"technical-{tag}")
     monthly = rep.monthly[[c for c in TECH_COLUMNS if rep.monthly[c].notna().any()]].rename_axis("Month")
@@ -125,7 +126,12 @@ def technical_report(rep: TechnicalReport, guarantees: dict | None, out_dir: Pat
         sections.append(note(n))
     title = f"Technical report: {rep.name}"
     sub = "Source: AEMO public data (NEM)" if rep.source == "nem" else "Source: EMS or SCADA long table"
-    html = page(title, sub, sections, footer=FOOTER)
+    s = rep.summary
+    head = tiles([("Availability", fmt(s["availability"], "pct"), "time-weighted" + (", declared (PASA)" if rep.source == "nem" else ", LTSA formula")),
+                  ("Round-trip efficiency", fmt(s["rte"], "pct"), "SoC-corrected, mean of months"),
+                  ("Cycles per year", fmt(s["efc_per_year"], "num1"), "equivalent full cycles"),
+                  ("State of health, 10 years", fmt(s.get("soh_year10"), "pct"), "ageing model, not a measurement")])
+    html = page(title, sub, sections, footer=FOOTER, current=f"technical-{tag}.html", head_tiles=head)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / f"technical-{tag}.html").write_text(html, encoding="utf-8")
     xlsx = write_excel(out_dir / f"technical-{tag}.xlsx", sheets,
@@ -142,7 +148,7 @@ def financial_report(sim: dict, site, out_dir: Path, tag: str = "example") -> di
     mix = revenue_mix(sa)
     mix.index = pd.Index([LINES[i] for i in mix.index], name="Revenue line")
     bridge = sim["bridge"].frame()
-    figs = {"revenue_mix": F.revenue_mix_chart(sa, REVENUE_LINES), "bridge": F.bridge_chart(bridge)}
+    figs = {"revenue_mix": lambda: F.revenue_mix_chart(sa, REVENUE_LINES), "bridge": lambda: F.bridge_chart(bridge)}
     images = save_figures(figs, out_dir, f"financial-{tag}")
     a = sim["assumptions"]
     sections = [
@@ -162,7 +168,14 @@ def financial_report(sim: dict, site, out_dir: Path, tag: str = "example") -> di
              f"RTE {fmt(a['nameplate_rte'], 'pct')}; measured RTE (mean) {fmt(a['measured_rte_mean'], 'pct')}, measured "
              f"availability (mean) {fmt(a['measured_availability_mean'], 'pct')}. Fixed costs are placeholders of the site file."),
     ]
-    html = page(f"Financial report: {site.name}", f"{site.first_day} to {site.last_day}", sections, footer=FOOTER)
+    b = sim["bridge"]
+    head = tiles([("Budget margin", fmt(b.start, "pln") + " PLN", "rule-based budget"),
+                  ("Actual margin", fmt(b.end, "pln") + " PLN", "simulated year"),
+                  ("Against budget", f"{(b.end / b.start - 1) * 100:+.1f} %", "market, efficiency, availability"),
+                  ("Balancing capacity", fmt(mix.loc[[i for i in mix.index if "capacity" in i.lower() and "market" not in i.lower()], "share"].sum(), "pct"),
+                   "of revenue; price taker of 1 MW")])
+    html = page(f"Financial report: {site.name}", f"{site.first_day} to {site.last_day}", sections, footer=FOOTER,
+                current=f"financial-{tag}.html", head_tiles=head)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / f"financial-{tag}.html").write_text(html, encoding="utf-8")
     xlsx = write_excel(out_dir / f"financial-{tag}.xlsx",
@@ -177,7 +190,7 @@ def financial_report(sim: dict, site, out_dir: Path, tag: str = "example") -> di
 
 
 def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: Path, tag: str = "example") -> dict:
-    figs = {"strategies": F.strategy_chart(table), "monthly": F.strategy_monthly_chart(
+    figs = {"strategies": lambda: F.strategy_chart(table), "monthly": lambda: F.strategy_monthly_chart(
         monthly.rename(columns=table["short"].to_dict()))}
     images = save_figures(figs, out_dir, f"strategies-{tag}")
     show = table[["short", "information", "market_risk", "pln_per_mw_year", "share_of_ceiling", "month_mean_pln_per_mw",
@@ -203,8 +216,13 @@ def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: P
              "a fleet. Activation energy and the stress-period obligation of the capacity market are not modelled. "
              "The toll is a placeholder input of the site file."),
     ]
+    sc = table["share_of_ceiling"]
+    head = tiles([("Stack, as-of", fmt(sc["stack_asof"], "pct"), "of its perfect-foresight ceiling"),
+                  ("Day-ahead, as-of", fmt(sc["da_asof"], "pct"), "of its perfect-foresight ceiling"),
+                  ("Availability assumed", fmt(table.attrs["availability"], "pct"), "same for every strategy"),
+                  ("Delivery days", fmt(table.attrs["days"], "int"), "one battery, one evaluation")])
     html = page(f"Strategy comparison: {site.name}", f"{table.attrs['first_day']} to {table.attrs['last_day']}",
-                sections, footer=FOOTER)
+                sections, footer=FOOTER, current=f"strategies-{tag}.html", head_tiles=head)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / f"strategies-{tag}.html").write_text(html, encoding="utf-8")
     xlsx = write_excel(out_dir / f"strategies-{tag}.xlsx", {"Comparison": show, "Monthly": monthly},

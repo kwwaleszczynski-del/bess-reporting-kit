@@ -57,7 +57,8 @@ def test_overlap_detector_detects():
 
 def test_html_page_is_self_contained_and_responsive():
     html = page("T", "s", ["<p>x</p>"])
-    assert "viewport" in html and "prefers-color-scheme:dark" in html and "http" not in re.sub(r"data:image[^\"]*", "", html)
+    assert "viewport" in html and "prefers-color-scheme:dark" in html
+    assert "http" not in html.replace("https://github.com/kwwaleszczynski-del/bess-reporting-kit", "")
     t = table_html(pd.DataFrame({"a": [0.5], "b": [True]}, index=["r"]), {"a": "pct"}, status_cols=("b",))
     assert "50.0 %" in t and "class=\"ok\"" in t and "overflow-x" in html + "overflow-x"
 

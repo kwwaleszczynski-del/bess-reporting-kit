@@ -1,5 +1,5 @@
-"""The GitHub Pages landing page: ``docs/index.html`` with the example reports, their Excel files and the headline
-figures of ``results/summary.json`` (every number comes from there).
+"""The GitHub Pages landing page: ``docs/index.html`` with key figures, the example reports (thumbnails, HTML and
+Excel links) and the main charts. Every number comes from ``results/summary.json``.
 
 Usage:
     python -m bess_report site
@@ -10,40 +10,68 @@ import json
 from pathlib import Path
 
 from bess_report import readme
-from bess_report.render import CSS, esc, fmt
+from bess_report.render import GITHUB, esc, fmt, note, page, section, tiles
+
+IMG = "report/img/"
+
+
+def _picture(name: str, alt: str) -> str:
+    return (f'<picture><source media="(prefers-color-scheme: dark)" srcset="{IMG}{name}_dark.png">'
+            f'<img alt="{esc(alt)}" src="{IMG}{name}.png"></picture>')
+
+
+def card(title: str, text: str, slug: str, thumb: str) -> str:
+    return (f'<div class="card"><a class="thumb" href="report/{slug}.html">{_picture(thumb, title)}</a>'
+            f'<div class="body"><h3>{esc(title)}</h3><p>{esc(text)}</p><div class="btns">'
+            f'<a class="btn p" href="report/{slug}.html">Open report</a>'
+            f'<a class="btn" href="report/{slug}.xlsx">Excel</a></div></div></div>')
 
 
 def build(root: Path) -> Path:
     s = json.loads((root / "results" / "summary.json").read_text(encoding="utf-8"))
     d = readme.derive(s)
-    st, tn, fin = s["strategies"], s["technical_nem"], s["financial"]
-    cards = [
-        ("Technical report", "technical-nem",
-         f"{tn['name']}, {tn['months']} months of AEMO open data: availability {fmt(tn['availability'], 'pct')}, RTE "
-         f"{fmt(tn['rte'], 'pct')}, {fmt(tn['efc_per_year'], 'num1')} cycles per year."),
-        ("Technical report, EMS table", "technical-ems",
-         f"The same layout on an EMS export (synthetic battery with known truth): "
-         f"{s['technical_ems']['violations']} warranty violations found, availability {fmt(s['technical_ems']['availability'], 'pct')}."),
-        ("Financial report", "financial-example",
-         f"Simulated year, margin {fmt(fin['bridge']['end'], 'pln')} PLN against a budget of {fmt(fin['bridge']['start'], 'pln')} PLN, "
-         "with a bridge whose steps add up."),
-        ("Strategy comparison", "strategies-example",
-         f"Revenue stack {fmt(st['stack_asof']['pln_per_mw_year'], 'pln')} PLN/MW/year, day-ahead arbitrage "
-         f"{fmt(st['da_asof']['pln_per_mw_year'], 'pln')}, all as-of, over {s['strategy_meta']['days']} days."),
+    st, tn, te, meta = s["strategies"], s["technical_nem"], s["technical_ems"], s["strategy_meta"]
+    cap = f"{d['capacity_lines_share'] * 100:.0f} %"
+    head = tiles([
+        ("Revenue stack, as-of", fmt(st["stack_asof"]["share_of_ceiling"], "pct"),
+         f"of its perfect-foresight ceiling; simulation, price taker of 1 MW, {cap} of revenue from balancing capacity"),
+        ("Day-ahead arbitrage, as-of", fmt(st["da_asof"]["share_of_ceiling"], "pct"),
+         "of its ceiling, with a plain seven-day average forecast"),
+        ("Declared availability", fmt(tn["availability"], "pct"),
+         f"NEM battery on open AEMO data; RTE {fmt(tn['rte'], 'pct')}, {fmt(tn['efc_per_year'], 'num1')} cycles per year"),
+        ("Margin against budget", f"{d['bridge_change_pct'] * 100:+.1f} %",
+         "simulated year, rule-based budget, bridge adds up exactly"),
+    ])
+    cards = "".join([
+        card("Technical report, NEM battery",
+             f"{tn['name']}: {tn['months']} months of AEMO open data, availability, RTE, cycles, state of health.",
+             "technical-nem", "technical-nem_availability"),
+        card("Technical report, EMS table",
+             f"The same layout on an EMS export (synthetic battery with known truth): {te['violations']} warranty "
+             "violations found, auxiliary load, LTSA availability.", "technical-ems", "technical-ems_rte"),
+        card("Financial report",
+             "Revenue by source, costs, margin, budget variance and a budget-to-actual bridge. A simulation on public "
+             "prices, not a real plant.", "financial-example", "financial-example_bridge"),
+        card("Strategy comparison",
+             f"Day-ahead arbitrage, revenue stack, tolling and capacity market on one evaluation, {meta['days']} days, "
+             "every plan made with an explicit as-of information set.", "strategies-example",
+             "strategies-example_strategies"),
+    ])
+    fig = lambda name, alt: f'<div class="fig">{_picture(name, alt)}</div>'   # noqa: E731
+    body = [
+        note("Working material, not an official statement and not investment advice. The money figures are a simulation "
+             "on public prices for a price taker of 1 MW; balancing markets are small, so they do not scale to a fleet. "
+             "Toll, guarantees and fixed costs are illustrative placeholders; capacity market terms are to be verified."),
+        section("Example reports", f'<div class="cards">{cards}</div>'),
+        section("Strategies on one evaluation", fig("strategies-example_strategies", "strategies")),
+        section("Budget to actual margin", fig("financial-example_bridge", "budget bridge")),
+        section("Source", f'<p>Code, README with the method and the limits, and the tests: '
+                          f'<a href="{GITHUB}">{esc(GITHUB)}</a>.</p>'),
     ]
-    items = "".join(
-        f"<div class=\"card\"><h3>{esc(t)}</h3><p>{esc(text)}</p><p><a href=\"report/{slug}.html\">Open the report</a> · "
-        f"<a href=\"report/{slug}.xlsx\">Excel</a></p></div>" for t, slug, text in cards)
-    extra = ".card{border:1px solid var(--line);border-radius:8px;padding:.2em 1em;margin:.8em 0}.card h3{margin:.6em 0 .2em}"
-    body = (f"<main><h1>bess-reporting-kit</h1><p class=\"sub\">Technical and financial reports for grid batteries and a "
-            "common evaluation of energy sales strategies, built on open data. Working material: contract terms are "
-            "illustrative, capacity market terms are to be verified, money figures are a simulation.</p>"
-            f"{items}<h2>Strategies on one evaluation</h2><img alt=\"strategies\" src=\"report/img/strategies-example_strategies.png\">"
-            "<h2>Budget to actual margin</h2><img alt=\"bridge\" src=\"report/img/financial-example_bridge.png\">"
-            "<footer><a href=\"https://github.com/kwwaleszczynski-del/bess-reporting-kit\">Source and README</a></footer></main>")
-    html = ("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" "
-            "content=\"width=device-width,initial-scale=1\"><title>bess-reporting-kit</title>"
-            f"<style>{CSS}{extra}</style></head><body>{body}</body></html>")
+    html = page("bess-reporting-kit",
+                "Technical and financial reports for grid batteries and a common evaluation of energy sales strategies, "
+                "built on open data (PSE, AEMO).", body, footer="Working material. Illustrative terms are marked.",
+                prefix="report/", head_tiles=head)
     out = root / "docs" / "index.html"
-    out.write_text(html, encoding="utf-8")
+    out.write_text(html, encoding="utf-8", newline="\n")
     return out
