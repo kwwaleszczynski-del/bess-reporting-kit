@@ -106,6 +106,14 @@ def table(name: str, s: dict) -> str:
                 for k, v in s["saturation"]["rows"].items()]
         return _md(["Fleet, MW", "Perfect foresight, PLN/MW/year", "Kept of the lone battery", "Stack as-of, scaled",
                     "Day-ahead as-of"], rows, "---:|---:|---:|---:|---:")
+    if name == "sensitivity":
+        fs = s["forecast_sensitivity"]
+        lbs = sorted({int(k.split("_")[1]) for k in fs})
+        rows = [[fmt(lb, "int"), fmt(fs[f"da_{lb}"]["pln_per_mw_year"], "pln"), fmt(fs[f"da_{lb}"]["share_of_ceiling"], "pct0"),
+                 fmt(fs[f"stack_{lb}"]["pln_per_mw_year"], "pln"), fmt(fs[f"stack_{lb}"]["share_of_ceiling"], "pct0")]
+                for lb in lbs]
+        return _md(["Average over the previous days", "Day-ahead, PLN/MW/year", "Share of ceiling", "Stack, PLN/MW/year",
+                    "Share of ceiling"], rows, "---:|---:|---:|---:|---:")
     if name == "bridge":
         b = s["financial"]["bridge"]
         rows = [["Budget margin", fmt(b["start"], "pln")]]

@@ -28,7 +28,7 @@ import pandas as pd
 
 from bess_report.financial import Bridge, statement
 from bess_report.schema import FIXED_COST_LINES, Site
-from bess_report.strategies import REVENUE_COLUMNS, DayData, margin, run_strategy
+from bess_report.strategies import LOOKBACK_DAYS, REVENUE_COLUMNS, DayData, margin, run_strategy
 
 log = logging.getLogger(__name__)
 STEP_MARKET, STEP_RTE = "Market vs prior year", "RTE vs nameplate"
@@ -134,6 +134,27 @@ def compare(site: Site, runs: dict[str, pd.DataFrame], availability: float | Non
     out.attrs.update(availability=a, days=days, capacity_market=terms, first_day=str(runs["da_asof"].index.min()),
                      last_day=str(runs["da_asof"].index.max()))
     return out
+
+
+def forecast_sensitivity(site: Site, days: list[DayData], runs: dict[str, pd.DataFrame], lookbacks=(1, 3, 7),
+                         workers: int = 1) -> pd.DataFrame:
+    """The as-of strategies with different lengths of the forecast average: gross margin per MW and year at the
+    assumed availability and the share of the perfect-foresight ceiling. The default length reuses ``runs``."""
+    a = site.guarantees.get("availability", 1.0)
+    rows = []
+    for lb in lookbacks:
+        for kind in ("da", "stack"):
+            if lb == LOOKBACK_DAYS:
+                daily = runs[f"{kind}_asof"]
+            else:
+                daily = run_strategy(days, kind, "asof", site.battery, site.first_day, site.last_day,
+                                     workers=workers, lookback=lb)
+            ceiling = runs[f"{kind}_perfect"]
+            assert list(daily.index) == list(ceiling.index)
+            m, c = float(margin(daily).sum()), float(margin(ceiling).sum())
+            rows.append({"lookback_days": lb, "strategy": kind, "pln_per_mw_year": m * a * 365.0 / len(daily) / site.battery.power_mw,
+                         "share_of_ceiling": m / c})
+    return pd.DataFrame(rows)
 
 
 def _lines(daily: pd.DataFrame) -> pd.DataFrame:

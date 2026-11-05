@@ -146,3 +146,12 @@ def test_readme_math_and_style():
 def test_unknown_placeholder_is_an_error(summary):
     with pytest.raises(KeyError):
         readme.render("{{no.such.key}}", summary)
+
+
+def test_forecast_sensitivity_default_row_is_the_main_result(summary):
+    fs, st = summary["forecast_sensitivity"], summary["strategies"]
+    for kind in ("da", "stack"):
+        d = fs[f"{kind}_{summary['assumptions']['lookback_days']}"]
+        assert d["pln_per_mw_year"] == pytest.approx(st[f"{kind}_asof"]["pln_per_mw_year"], rel=1e-9)
+        assert d["share_of_ceiling"] == pytest.approx(st[f"{kind}_asof"]["share_of_ceiling"], rel=1e-9)
+    assert all(0 < v["share_of_ceiling"] <= 1.0001 for v in fs.values())

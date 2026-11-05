@@ -190,7 +190,7 @@ def financial_report(sim: dict, site, out_dir: Path, tag: str = "example") -> di
 
 
 def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: Path, tag: str = "example",
-                    saturation: pd.DataFrame | None = None) -> dict:
+                    saturation: pd.DataFrame | None = None, sensitivity: pd.DataFrame | None = None) -> dict:
     figs = {"strategies": lambda: F.strategy_chart(table), "monthly": lambda: F.strategy_monthly_chart(
         monthly.rename(columns=table["short"].to_dict()))}
     if saturation is not None:
@@ -214,6 +214,16 @@ def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: P
                 "month_std_pln_per_mw": "Month st. dev.", "month_worst_pln_per_mw": "Worst month",
                 "months_below_half_of_mean": "Months < half mean", "cycles_per_day": "Cycles/day"})),
         section("Month by month", img(ref(images, "monthly"), "monthly margin by strategy")),
+        *([section("How much the forecast matters", table_html(
+            sensitivity.pivot(index="lookback_days", columns="strategy", values=["pln_per_mw_year", "share_of_ceiling"])
+            .set_axis([f"{k} {v}" for k, v in sensitivity.pivot(index="lookback_days", columns="strategy",
+                                                                 values=["pln_per_mw_year", "share_of_ceiling"]).columns], axis=1)
+            .rename_axis("Average over previous days"), {
+                "pln_per_mw_year da": "pln", "pln_per_mw_year stack": "pln", "share_of_ceiling da": "pct",
+                "share_of_ceiling stack": "pct"}, headers={
+                "pln_per_mw_year da": "Day-ahead, PLN/MW/year", "share_of_ceiling da": "Day-ahead, share of ceiling",
+                "pln_per_mw_year stack": "Stack, PLN/MW/year", "share_of_ceiling stack": "Stack, share of ceiling"}))]
+           if sensitivity is not None else []),
         *([section("When the market fills up", img(ref(images, "saturation"), "stack against fleet size") + table_html(
             saturation.rename_axis("Fleet, MW"), {"perfect_pln_per_mw_year": "pln", "retention": "pct",
                                                   "stack_asof_scaled_pln_per_mw_year": "pln",
@@ -241,6 +251,8 @@ def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: P
     sheets = {"Comparison": show, "Monthly": monthly}
     if saturation is not None:
         sheets["Fleet size"] = saturation
+    if sensitivity is not None:
+        sheets["Forecast sensitivity"] = sensitivity
     xlsx = write_excel(out_dir / f"strategies-{tag}.xlsx", sheets,
                        {"Comparison": {"pln_per_mw_year": "#,##0", "share_of_ceiling": "0.0%",
                                        "month_mean_pln_per_mw": "#,##0", "month_std_pln_per_mw": "#,##0",

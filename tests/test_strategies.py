@@ -61,3 +61,13 @@ def test_unknown_strategy_and_empty_period(days, site):
         S.run_strategy(days, "x", "asof", site.battery, date(2025, 10, 8), date(2025, 10, 9))
     with pytest.raises(ValueError, match="no day can be planned"):
         S.run_strategy(days, "da", "asof", site.battery, date(2024, 9, 23), date(2024, 9, 25))
+
+
+@pytest.mark.parametrize("lookback", [1, 3, 7])
+def test_as_of_for_every_lookback(days, lookback):
+    i = 200
+    before = S.plan_inputs(days, i, lookback)
+    future = [replace(d, prices=d.prices * 3 + 100, reserve_prices=d.reserve_prices * 7) for d in days[i:]]
+    after = S.plan_inputs(days[:i] + future, i, lookback)
+    assert np.array_equal(before[0], after[0]) and np.array_equal(before[1], after[1], equal_nan=True)
+    assert S.plan_inputs(days, lookback - 1, lookback) is None and S.plan_inputs(days, lookback, lookback) is not None

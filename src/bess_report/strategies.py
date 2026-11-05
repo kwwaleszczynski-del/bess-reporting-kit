@@ -98,15 +98,18 @@ def build_days(prices: pd.DataFrame, capacity: pd.DataFrame) -> list[DayData]:
     return out
 
 
-def plan_inputs(days: list[DayData], i: int) -> tuple[np.ndarray, np.ndarray] | None:
+def plan_inputs(days: list[DayData], i: int, lookback: int = LOOKBACK_DAYS) -> tuple[np.ndarray, np.ndarray] | None:
     """Forecast of the energy prices (per quarter-hour) and capacity prices (hours x products) of day ``i`` from
-    the previous ``LOOKBACK_DAYS`` calendar days only; None when fewer than that are available."""
+    the previous ``lookback`` (default ``LOOKBACK_DAYS``) calendar days only; None when fewer are available."""
     d = days[i]
-    prev = [x for x in days[max(0, i - 2 * LOOKBACK_DAYS):i]
-            if 1 <= (d.business_date - x.business_date).days <= LOOKBACK_DAYS]
-    if len(prev) < LOOKBACK_DAYS:
+    prev = [x for x in days[max(0, i - 2 * lookback):i]
+            if 1 <= (d.business_date - x.business_date).days <= lookback]
+    if len(prev) < lookback:
         return None
     e = pd.concat([pd.Series(x.prices).groupby(x.minute).mean() for x in prev], axis=1).mean(axis=1)
+    # a short lookback can miss the local times that a daylight saving change removed from the previous day:
+    # fill them from the neighbouring quarter-hours of the same average (still only past information)
+    e = e.reindex(range(0, 1440, 15)).interpolate(limit_direction="both")
     energy = e.reindex(d.minute).to_numpy()
     by_hour = []
     for x in prev:
@@ -147,7 +150,8 @@ def _solve(task):
 
 
 def run_strategy(days: list[DayData], kind: str, mode: str, battery: Battery, first_day: date, last_day: date,
-                 rte_by_month: dict[str, float] | None = None, workers: int = 1) -> pd.DataFrame:
+                 rte_by_month: dict[str, float] | None = None, workers: int = 1,
+                 lookback: int = LOOKBACK_DAYS) -> pd.DataFrame:
     """Plan and settle ``kind`` (``da`` or ``stack``) for every day of the period; one row per business date.
 
     ``mode`` is ``perfect`` or ``asof``; ``rte_by_month`` (YYYY-MM -> round-trip efficiency) replaces the
@@ -159,7 +163,7 @@ def run_strategy(days: list[DayData], kind: str, mode: str, battery: Battery, fi
     for i, day in enumerate(days):
         if not first_day <= day.business_date <= last_day:
             continue
-        fc = plan_inputs(days, i)
+        fc = plan_inputs(days, i, lookback)
         if fc is None:
             continue
         rte = None if not rte_by_month else rte_by_month.get(f"{day.business_date:%Y-%m}")

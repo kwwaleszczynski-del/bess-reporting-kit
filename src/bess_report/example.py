@@ -88,13 +88,15 @@ def run(root: Path, site_path: Path, workers: int = 1, nem_duid: str = NEM_DUID)
     for t in table.attrs["capacity_market"]:
         monthly[f"cm_{t['auction']}"] = monthly["da_asof"] + t["pln_per_mw_year"] / 12.0 * a
     table.to_csv(results / "strategy_comparison.csv")
+    sens = scenario.forecast_sensitivity(site, days, runs, workers=workers)
+    sens.to_csv(results / "forecast_sensitivity.csv", index=False)
     monthly.to_csv(results / "strategy_monthly_margin_per_mw.csv")
     pd.DataFrame({k: margin(v) for k, v in runs.items()}).to_csv(results / "strategy_daily_margin.csv")
     sat = None
     if (results / "saturation_fleet.csv").exists():                 # written by the separate `saturation` command
         sat = pd.read_csv(results / "saturation_fleet.csv", index_col="fleet_mw")
     paths["strategies"] = reports.strategy_report(table, monthly.dropna(axis=1, how="all"), site, docs / "report",
-                                                  saturation=sat)
+                                                  saturation=sat, sensitivity=sens)
 
     # financial: simulated settlement, budget and bridge, with the technical report's availability and RTE
     sim = scenario.simulate_year(site, days, runs, nem.monthly, workers)
@@ -109,6 +111,9 @@ def run(root: Path, site_path: Path, workers: int = 1, nem_duid: str = NEM_DUID)
     mix.to_csv(results / "financial_revenue_mix.csv")
 
     out["strategies"] = {i: {k: v for k, v in r.items() if k != "label"} for i, r in table.to_dict("index").items()}
+    out["forecast_sensitivity"] = {f"{r.strategy}_{r.lookback_days}": {"pln_per_mw_year": r.pln_per_mw_year,
+                                                                       "share_of_ceiling": r.share_of_ceiling}
+                                   for r in sens.itertuples()}
     out["strategy_meta"] = {"availability": a, "days": table.attrs["days"], "first_day": table.attrs["first_day"],
                             "last_day": table.attrs["last_day"], "capacity_market": table.attrs["capacity_market"]}
     if sat is not None:

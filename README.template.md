@@ -57,6 +57,15 @@ A {{assumptions.battery.power_mw|num1}} MW / {{assumptions.battery.energy_mwh|nu
 
 ![strategies](docs/report/img/strategies-example_strategies.png)
 
+### How much the forecast matters
+
+The same two as-of strategies with a shorter or longer average as the forecast (the default is the row used everywhere
+else; every length is planned on the same days and compared with the same ceiling):
+
+{{table:sensitivity}}
+
+A better forecaster can replace the baseline without changing the evaluation; the table is the room it has to work in.
+
 ### When the market fills up
 
 The stack is a price taker's result: one megawatt among a few hundred megawatts of demand per product. Flooding the

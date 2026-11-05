@@ -191,6 +191,32 @@
       "share_of_ceiling": null
     }
   },
+  "forecast_sensitivity": {
+    "da_1": {
+      "pln_per_mw_year": 277513.4438753087,
+      "share_of_ceiling": 0.7051419124912839
+    },
+    "stack_1": {
+      "pln_per_mw_year": 2817533.8574193353,
+      "share_of_ceiling": 0.894812400405454
+    },
+    "da_3": {
+      "pln_per_mw_year": 307042.965831489,
+      "share_of_ceiling": 0.7801743264037798
+    },
+    "stack_3": {
+      "pln_per_mw_year": 2852618.1633111686,
+      "share_of_ceiling": 0.9059547232879145
+    },
+    "da_7": {
+      "pln_per_mw_year": 321346.29662956204,
+      "share_of_ceiling": 0.8165180721088724
+    },
+    "stack_7": {
+      "pln_per_mw_year": 2872470.413026534,
+      "share_of_ceiling": 0.9122595416575242
+    }
+  },
   "strategy_meta": {
     "availability": 0.97,
     "days": 365,

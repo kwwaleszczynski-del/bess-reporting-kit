@@ -65,6 +65,19 @@ A 1.0 MW / 2.0 MWh battery, 365 delivery days
 
 ![strategies](docs/report/img/strategies-example_strategies.png)
 
+### How much the forecast matters
+
+The same two as-of strategies with a shorter or longer average as the forecast (the default is the row used everywhere
+else; every length is planned on the same days and compared with the same ceiling):
+
+| Average over the previous days | Day-ahead, PLN/MW/year | Share of ceiling | Stack, PLN/MW/year | Share of ceiling |
+|---:|---:|---:|---:|---:|
+| 1 | 277 513 | 71 % | 2 817 534 | 89 % |
+| 3 | 307 043 | 78 % | 2 852 618 | 91 % |
+| 7 | 321 346 | 82 % | 2 872 470 | 91 % |
+
+A better forecaster can replace the baseline without changing the evaluation; the table is the room it has to work in.
+
 ### When the market fills up
 
 The stack is a price taker's result: one megawatt among a few hundred megawatts of demand per product. Flooding the
