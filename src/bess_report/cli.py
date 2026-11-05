@@ -9,6 +9,7 @@ Usage:
         --ltsa l.yaml --events events.csv --out out/
     python -m bess_report financial --settlement settlement.csv --budget budget.csv --site config/site.example.yaml
     python -m bess_report strategies --site config/site.example.yaml --workers 4
+    python -m bess_report saturation --stack-data-dir ../pl-bess-revenue-stack/data --workers 4
     python -m bess_report fetch-pse --start 2024-09-23 --end 2026-09-30
     python -m bess_report prepare-nem --nem-data-dir D --nem-extra-dir E --duid RANGEB1
 
@@ -72,6 +73,14 @@ def main(argv=None) -> int:
     s.add_argument("--data", type=Path, default=Path("data/example"), help="PSE slice (fetch-pse)")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--out", type=Path, default=Path("out"))
+
+    sa = sub.add_parser("saturation", help="stack revenue against fleet size (needs the cache of pl-bess-revenue-stack)")
+    sa.add_argument("--site", type=Path, default=Path("config/site.example.yaml"))
+    sa.add_argument("--data", type=Path, default=Path("data/example"))
+    sa.add_argument("--stack-data-dir", type=Path, default=_env_path("BESS_STACK_DATA_DIR"))
+    sa.add_argument("--results", type=Path, default=Path("results"))
+    sa.add_argument("--iterations", type=int, default=6)
+    sa.add_argument("--workers", type=int, default=1)
 
     d = sub.add_parser("fetch-pse", help="download PSE prices into the example slice")
     d.add_argument("--start", default="2024-09-23")
@@ -148,6 +157,20 @@ def main(argv=None) -> int:
         import pandas as pd
         paths = reports.strategy_report(table, pd.DataFrame(monthly), site, a.out, "user")
         log.info("written %s and %s", paths["html"], paths["xlsx"])
+    elif a.cmd == "saturation":
+        if a.stack_data_dir is None:
+            p.error("--stack-data-dir (or BESS_STACK_DATA_DIR) is required")
+        import pandas as pd
+        from bess_report import data, saturation
+        from bess_report.schema import load_site
+        from bess_report.strategies import build_days
+        site = load_site(a.site)
+        prices, capacity = data.load_slice(a.data)
+        summary = saturation.run_fleet(site, build_days(prices, capacity), a.stack_data_dir,
+                                       iterations=a.iterations, workers=a.workers)
+        strategies = pd.read_csv(a.results / "strategy_comparison.csv", index_col="id")
+        saturation.fleet_table(summary, strategies).to_csv(a.results / "saturation_fleet.csv")
+        summary.attrs["convergence"].to_csv(a.results / "saturation_convergence.csv", index=False)
     elif a.cmd == "fetch-pse":
         from bess_report import data
         prices, capacity = data.fetch(date.fromisoformat(a.start), date.fromisoformat(a.end), a.cache)

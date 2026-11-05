@@ -58,10 +58,14 @@ def build(root: Path) -> Path:
              "strategies-example_strategies"),
     ])
     fig = lambda name, alt: f'<div class="fig">{_picture(name, alt)}</div>'   # noqa: E731
+    sat = ""
+    if "sat_large_mw" in d:
+        sat = (f" In a fleet model, at {d['sat_large_mw']:,} MW of identical batteries a battery keeps "
+               f"{d['sat_large_retention'] * 100:.0f} % of the lone battery's margin.").replace(",", " ")
     body = [
         note("Working material, not an official statement and not investment advice. The money figures are a simulation "
              "on public prices for a price taker of 1 MW; balancing markets are small, so they do not scale to a fleet. "
-             "Toll, guarantees and fixed costs are illustrative placeholders; capacity market terms are to be verified."),
+             "Toll, guarantees and fixed costs are illustrative placeholders; capacity market terms are to be verified." + sat),
         section("Example reports", f'<div class="cards">{cards}</div>'),
         section("Strategies on one evaluation", fig("strategies-example_strategies", "strategies")),
         section("Budget to actual margin", fig("financial-example_bridge", "budget bridge")),

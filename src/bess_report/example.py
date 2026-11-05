@@ -90,7 +90,11 @@ def run(root: Path, site_path: Path, workers: int = 1, nem_duid: str = NEM_DUID)
     table.to_csv(results / "strategy_comparison.csv")
     monthly.to_csv(results / "strategy_monthly_margin_per_mw.csv")
     pd.DataFrame({k: margin(v) for k, v in runs.items()}).to_csv(results / "strategy_daily_margin.csv")
-    paths["strategies"] = reports.strategy_report(table, monthly.dropna(axis=1, how="all"), site, docs / "report")
+    sat = None
+    if (results / "saturation_fleet.csv").exists():                 # written by the separate `saturation` command
+        sat = pd.read_csv(results / "saturation_fleet.csv", index_col="fleet_mw")
+    paths["strategies"] = reports.strategy_report(table, monthly.dropna(axis=1, how="all"), site, docs / "report",
+                                                  saturation=sat)
 
     # financial: simulated settlement, budget and bridge, with the technical report's availability and RTE
     sim = scenario.simulate_year(site, days, runs, nem.monthly, workers)
@@ -107,6 +111,16 @@ def run(root: Path, site_path: Path, workers: int = 1, nem_duid: str = NEM_DUID)
     out["strategies"] = {i: {k: v for k, v in r.items() if k != "label"} for i, r in table.to_dict("index").items()}
     out["strategy_meta"] = {"availability": a, "days": table.attrs["days"], "first_day": table.attrs["first_day"],
                             "last_day": table.attrs["last_day"], "capacity_market": table.attrs["capacity_market"]}
+    if sat is not None:
+        from bess_report.saturation import breakeven_fleet_mw
+        rows = {str(int(k)): v for k, v in sat.to_dict("index").items()}
+        conv = pd.read_csv(results / "saturation_convergence.csv")
+        last = conv.groupby("fleet_mw").last()
+        for k in rows:
+            if int(k) in last.index:
+                rows[k]["last_schedule_change_mw"] = float(last.loc[int(k), "mean_abs_change_mw"])
+        out["saturation"] = {"rows": rows, "breakeven_fleet_mw": breakeven_fleet_mw(sat),
+                             "iterations": int(conv["iteration"].max())}
     out["financial"] = {
         "bridge": {"start": sim["bridge"].start, "end": sim["bridge"].end,
                    "steps": {f"step{i}": {"label": k, "value": v} for i, (k, v) in enumerate(sim["bridge"].steps)}},

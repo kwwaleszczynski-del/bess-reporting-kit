@@ -189,9 +189,12 @@ def financial_report(sim: dict, site, out_dir: Path, tag: str = "example") -> di
             "bridge": bridge}
 
 
-def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: Path, tag: str = "example") -> dict:
+def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: Path, tag: str = "example",
+                    saturation: pd.DataFrame | None = None) -> dict:
     figs = {"strategies": lambda: F.strategy_chart(table), "monthly": lambda: F.strategy_monthly_chart(
         monthly.rename(columns=table["short"].to_dict()))}
+    if saturation is not None:
+        figs["saturation"] = lambda: F.saturation_chart(saturation)
     images = save_figures(figs, out_dir, f"strategies-{tag}")
     show = table[["short", "information", "market_risk", "pln_per_mw_year", "share_of_ceiling", "month_mean_pln_per_mw",
                   "month_std_pln_per_mw", "month_worst_pln_per_mw", "months_below_half_of_mean", "cycles_per_day"]]
@@ -211,6 +214,16 @@ def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: P
                 "month_std_pln_per_mw": "Month st. dev.", "month_worst_pln_per_mw": "Worst month",
                 "months_below_half_of_mean": "Months < half mean", "cycles_per_day": "Cycles/day"})),
         section("Month by month", img(ref(images, "monthly"), "monthly margin by strategy")),
+        *([section("When the market fills up", img(ref(images, "saturation"), "stack against fleet size") + table_html(
+            saturation.rename_axis("Fleet, MW"), {"perfect_pln_per_mw_year": "pln", "retention": "pct",
+                                                  "stack_asof_scaled_pln_per_mw_year": "pln",
+                                                  "da_asof_pln_per_mw_year": "pln", "reserve_share": "pct"},
+            headers={"perfect_pln_per_mw_year": "Perfect foresight, PLN/MW/year", "retention": "Kept of lone battery",
+                     "stack_asof_scaled_pln_per_mw_year": "Stack as-of, scaled", "da_asof_pln_per_mw_year": "Day-ahead as-of",
+                     "reserve_share": "From reserves"})),
+           note("Fleet model of pl-bess-revenue-stack (offer stacks, pro-rata acceptance, perfect foresight); the as-of "
+                "stack is scaled by the share kept, which assumes the as-of plan loses the same share. Day-ahead prices "
+                "are not moved by the fleet in this model.")] if saturation is not None else []),
         note("Capacity market terms (to verify against the current regulations): " + cm_text if cm else "No capacity market terms."),
         note("Balancing capacity is assumed accepted in full at the clearing price (price taker): true for one MW, not for "
              "a fleet. Activation energy and the stress-period obligation of the capacity market are not modelled. "
@@ -225,7 +238,10 @@ def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: P
                 sections, footer=FOOTER, current=f"strategies-{tag}.html", head_tiles=head)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / f"strategies-{tag}.html").write_text(html, encoding="utf-8")
-    xlsx = write_excel(out_dir / f"strategies-{tag}.xlsx", {"Comparison": show, "Monthly": monthly},
+    sheets = {"Comparison": show, "Monthly": monthly}
+    if saturation is not None:
+        sheets["Fleet size"] = saturation
+    xlsx = write_excel(out_dir / f"strategies-{tag}.xlsx", sheets,
                        {"Comparison": {"pln_per_mw_year": "#,##0", "share_of_ceiling": "0.0%",
                                        "month_mean_pln_per_mw": "#,##0", "month_std_pln_per_mw": "#,##0",
                                        "month_worst_pln_per_mw": "#,##0"}},

@@ -228,6 +228,23 @@ def strategy_chart(table: pd.DataFrame) -> Figure:
     return fig
 
 
+def saturation_chart(table: pd.DataFrame) -> Figure:
+    """Scaled as-of stack margin against fleet size, with the unchanged day-ahead as-of margin."""
+    fig, ax = plt.subplots(figsize=(WIDTH, 4.4))
+    x = np.arange(len(table))
+    ax.plot(x, table["stack_asof_scaled_pln_per_mw_year"] / 1e3, marker="o", color=C["blue"],
+            label="Stack, as-of, scaled by the fleet model")
+    ax.plot(x, table["da_asof_pln_per_mw_year"] / 1e3, marker="s", color=C["orange"], ls="--",
+            label="Day-ahead arbitrage, as-of")
+    ax.set_xticks(x, [f"{int(m):,}".replace(",", " ") for m in table.index])
+    ax.set_xlabel("Fleet of identical batteries chasing the same reserves, MW")
+    ax.set_ylabel("thousand PLN per MW and year")
+    ax.set_ylim(0, None)
+    ax.set_title("Revenue stack against fleet size")
+    _legend_below(ax, 1, -0.30)
+    return fig
+
+
 def strategy_monthly_chart(monthly: pd.DataFrame) -> Figure:
     fig, ax = plt.subplots(figsize=(WIDTH, 4.6))
     x = np.arange(len(monthly))

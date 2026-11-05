@@ -215,6 +215,51 @@
       }
     ]
   },
+  "saturation": {
+    "rows": {
+      "0": {
+        "perfect_pln_per_mw_year": 3246126.3148539215,
+        "retention": 1.0,
+        "stack_asof_scaled_pln_per_mw_year": 2872470.413026533,
+        "da_asof_pln_per_mw_year": 321346.2966295621,
+        "reserve_share": 0.9882922426641175
+      },
+      "250": {
+        "perfect_pln_per_mw_year": 1989199.8872706757,
+        "retention": 0.6127918923451355,
+        "stack_asof_scaled_pln_per_mw_year": 1760226.5801039422,
+        "da_asof_pln_per_mw_year": 321346.2966295621,
+        "reserve_share": 0.9643241718247231,
+        "last_schedule_change_mw": 0.23160256491182923
+      },
+      "500": {
+        "perfect_pln_per_mw_year": 1524374.9208984207,
+        "retention": 0.4695981527037462,
+        "stack_asof_scaled_pln_per_mw_year": 1348906.7996534267,
+        "da_asof_pln_per_mw_year": 321346.2966295621,
+        "reserve_share": 0.9184849883616323,
+        "last_schedule_change_mw": 0.2139563472130053
+      },
+      "1000": {
+        "perfect_pln_per_mw_year": 1052156.3448109997,
+        "retention": 0.32412674146303133,
+        "stack_asof_scaled_pln_per_mw_year": 931044.474923258,
+        "da_asof_pln_per_mw_year": 321346.2966295621,
+        "reserve_share": 0.7928888221537648,
+        "last_schedule_change_mw": 0.10303167590583931
+      },
+      "2000": {
+        "perfect_pln_per_mw_year": 689483.7246262971,
+        "retention": 0.21240200095458223,
+        "stack_asof_scaled_pln_per_mw_year": 610118.4634096709,
+        "da_asof_pln_per_mw_year": 321346.2966295621,
+        "reserve_share": 0.5609259442537299,
+        "last_schedule_change_mw": 0.0327853676983768
+      }
+    },
+    "breakeven_fleet_mw": null,
+    "iterations": 6
+  },
   "financial": {
     "bridge": {
       "start": 2663941.863097709,

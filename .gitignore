@@ -7,3 +7,4 @@ __pycache__/
 run.log
 build/
 dist/
+sat.log

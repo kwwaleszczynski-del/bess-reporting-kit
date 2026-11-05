@@ -65,6 +65,30 @@ A 1.0 MW / 2.0 MWh battery, 365 delivery days
 
 ![strategies](docs/report/img/strategies-example_strategies.png)
 
+### When the market fills up
+
+The stack is a price taker's result: one megawatt among a few hundred megawatts of demand per product. Flooding the
+offer stacks PSE publishes with a fleet of identical batteries (the model of
+[pl-bess-revenue-stack](https://github.com/kwwaleszczynski-del/pl-bess-revenue-stack), run on the same
+365 days, perfect foresight, pro-rata acceptance) shows how much of the lone battery's margin is kept. The as-of
+stack is scaled by the share kept, which assumes the as-of plan loses the same share; day-ahead prices are not moved.
+
+| Fleet, MW | Perfect foresight, PLN/MW/year | Kept of the lone battery | Stack as-of, scaled | Day-ahead as-of |
+|---:|---:|---:|---:|---:|
+| 0 | 3 246 126 | 100 % | 2 872 470 | 321 346 |
+| 250 | 1 989 200 | 61 % | 1 760 227 | 321 346 |
+| 500 | 1 524 375 | 47 % | 1 348 907 | 321 346 |
+| 1 000 | 1 052 156 | 32 % | 931 044 | 321 346 |
+| 2 000 | 689 484 | 21 % | 610 118 | 321 346 |
+
+- At a fleet of 500 MW a battery keeps 47 % of the lone battery's margin, at
+  2 000 MW 21 %.
+- Even then the scaled stack, 610 118 PLN/MW/year, stays above day-ahead arbitrage in this model; the comparison
+  is far less lopsided than the lone-battery table suggests, and the model is optimistic (existing offers do not move,
+  demand does not change).
+- The iteration of prices and schedules had run 6 rounds; at the largest fleet the schedules were still moving by
+  0.03 MW per hour and product on average, so that row is not fully settled.
+
 ### Technical report: a battery of the Australian market on open data
 
 Rangebank BESS (200 MW / 400 MWh), 12 months of AEMO public data,

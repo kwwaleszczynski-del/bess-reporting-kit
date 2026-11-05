@@ -57,6 +57,24 @@ A {{assumptions.battery.power_mw|num1}} MW / {{assumptions.battery.energy_mwh|nu
 
 ![strategies](docs/report/img/strategies-example_strategies.png)
 
+### When the market fills up
+
+The stack is a price taker's result: one megawatt among a few hundred megawatts of demand per product. Flooding the
+offer stacks PSE publishes with a fleet of identical batteries (the model of
+[pl-bess-revenue-stack](https://github.com/kwwaleszczynski-del/pl-bess-revenue-stack), run on the same
+{{strategy_meta.days|int}} days, perfect foresight, pro-rata acceptance) shows how much of the lone battery's margin is kept. The as-of
+stack is scaled by the share kept, which assumes the as-of plan loses the same share; day-ahead prices are not moved.
+
+{{table:saturation}}
+
+- At a fleet of {{derived.sat_mid_mw|int}} MW a battery keeps {{derived.sat_mid_retention|pct0}} of the lone battery's margin, at
+  {{derived.sat_large_mw|int}} MW {{derived.sat_large_retention|pct0}}.
+- Even then the scaled stack, {{derived.sat_large_stack|pln}} PLN/MW/year, stays above day-ahead arbitrage in this model; the comparison
+  is far less lopsided than the lone-battery table suggests, and the model is optimistic (existing offers do not move,
+  demand does not change).
+- The iteration of prices and schedules had run {{saturation.iterations|int}} rounds; at the largest fleet the schedules were still moving by
+  {{derived.sat_large_change|num2}} MW per hour and product on average, so that row is not fully settled.
+
 ### Technical report: a battery of the Australian market on open data
 
 {{technical_nem.name}} ({{technical_nem.mw|int}} MW / {{technical_nem.mwh|int}} MWh), {{technical_nem.months|int}} months of AEMO public data,

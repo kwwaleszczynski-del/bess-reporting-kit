@@ -22,14 +22,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# The companion projects are not on PyPI: they install from their public repositories.
-ops = ["bess-ops-warranty @ git+https://github.com/kwwaleszczynski-del/bess-ops-warranty.git"]
-strategies = ["pl-bess-revenue-stack @ git+https://github.com/kwwaleszczynski-del/pl-bess-revenue-stack.git"]
-degradation = ["bess-capacity-augmentation @ git+https://github.com/kwwaleszczynski-del/bess-capacity-augmentation.git"]
+# The companion projects are not on PyPI: they install from their public repositories, pinned to the commit the
+# results were produced with (change the pin together with a rerun of the example).
+ops = ["bess-ops-warranty @ git+https://github.com/kwwaleszczynski-del/bess-ops-warranty.git@2f89932fb9afbc44feb7c177e805da7cbed00be8"]
+strategies = ["pl-bess-revenue-stack @ git+https://github.com/kwwaleszczynski-del/pl-bess-revenue-stack.git@8a68685d6f3db2e6ee1be350417f5b2ffeca6f55"]
+degradation = ["bess-capacity-augmentation @ git+https://github.com/kwwaleszczynski-del/bess-capacity-augmentation.git@4ba49c5d788a7335dabea0966cbe545e99671b6d"]
 all = [
-    "bess-ops-warranty @ git+https://github.com/kwwaleszczynski-del/bess-ops-warranty.git",
-    "pl-bess-revenue-stack @ git+https://github.com/kwwaleszczynski-del/pl-bess-revenue-stack.git",
-    "bess-capacity-augmentation @ git+https://github.com/kwwaleszczynski-del/bess-capacity-augmentation.git",
+    "bess-ops-warranty @ git+https://github.com/kwwaleszczynski-del/bess-ops-warranty.git@2f89932fb9afbc44feb7c177e805da7cbed00be8",
+    "pl-bess-revenue-stack @ git+https://github.com/kwwaleszczynski-del/pl-bess-revenue-stack.git@8a68685d6f3db2e6ee1be350417f5b2ffeca6f55",
+    "bess-capacity-augmentation @ git+https://github.com/kwwaleszczynski-del/bess-capacity-augmentation.git@4ba49c5d788a7335dabea0966cbe545e99671b6d",
 ]
 dev = ["pytest>=8"]
 

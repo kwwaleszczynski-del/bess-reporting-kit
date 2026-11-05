@@ -65,6 +65,14 @@ def derive(s: dict) -> dict:
     d["cm_best_extra"] = max(v["pln_per_mw_year"] - st["da_asof"]["pln_per_mw_year"]
                              for k, v in st.items() if k.startswith("cm_"))
     d["strategy_days"] = s["strategy_meta"]["days"]
+    sat = s.get("saturation")
+    if sat:
+        sizes = sorted(int(k) for k in sat["rows"] if int(k) > 0)
+        mid, large = sizes[1], sizes[-1]
+        d.update({"sat_mid_mw": mid, "sat_mid_retention": sat["rows"][str(mid)]["retention"],
+                  "sat_large_mw": large, "sat_large_retention": sat["rows"][str(large)]["retention"],
+                  "sat_large_stack": sat["rows"][str(large)]["stack_asof_scaled_pln_per_mw_year"],
+                  "sat_large_change": sat["rows"][str(large)]["last_schedule_change_mw"]})
     return d
 
 
@@ -92,6 +100,12 @@ def table(name: str, s: dict) -> str:
                 for k in order if k in st]
         return _md(["Strategy", "Plan for day D may use", "PLN/MW/year", "Share of own ceiling", "Worst month, PLN/MW",
                     "Best month, PLN/MW"], rows, "---|---|---:|---:|---:|---:")
+    if name == "saturation":
+        rows = [[fmt(float(k), "int"), fmt(v["perfect_pln_per_mw_year"], "pln"), fmt(v["retention"], "pct0"),
+                 fmt(v["stack_asof_scaled_pln_per_mw_year"], "pln"), fmt(v["da_asof_pln_per_mw_year"], "pln")]
+                for k, v in s["saturation"]["rows"].items()]
+        return _md(["Fleet, MW", "Perfect foresight, PLN/MW/year", "Kept of the lone battery", "Stack as-of, scaled",
+                    "Day-ahead as-of"], rows, "---:|---:|---:|---:|---:")
     if name == "bridge":
         b = s["financial"]["bridge"]
         rows = [["Budget margin", fmt(b["start"], "pln")]]
