@@ -1,0 +1,30 @@
+# Example site: a 1 MW / 2 MWh battery in Poland. Every number below is an ILLUSTRATIVE ASSUMPTION of the example,
+# not a market quote, a contract or data of any real plant. Replace them with your own terms.
+name: Reference BESS 1 MW / 2 MWh (Poland)
+battery:
+  power_mw: 1.0
+  energy_mwh: 2.0
+  round_trip_efficiency: 0.87     # nameplate, at the point of connection
+  soc_min: 0.05
+  soc_max: 0.95
+  soc_start: 0.5
+  max_cycles_per_day: 1.5
+  degradation_cost: 30.0          # PLN per MWh discharged, allowance in the plan and in the margin
+period:
+  start: 2025-10-01
+  end: 2026-09-30
+guarantees:                       # what the technical report assesses against
+  availability: 0.97
+  rte: 0.85
+  efc_per_year: 365               # warranty-style limit of equivalent full cycles per year
+opex_pln_per_mw_year:             # fixed costs; placeholders
+  om: 30000
+  insurance: 8000
+  grid_fees: 20000
+  land_and_other: 5000
+toll:                             # a tolling agreement: fixed payment for the capacity, scaled by availability
+  pln_per_mw_year: 300000         # placeholder, not a market quote; see the break-even in the report
+capacity_market:                  # delivery years of auctions whose terms are in bess_stack.capacity_market
+  auctions: [2029, 2030]          # to verify against the current regulations and the URE announcements
+budget:
+  availability: 0.97              # availability assumed when the budget was made

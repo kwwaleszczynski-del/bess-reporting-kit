@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bess-reporting-kit"
+version = "0.1.0"
+description = "Technical and financial reports for grid batteries and a common evaluation of energy sales strategies, built on open data"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "pyarrow>=14",
+    "scipy>=1.11",
+    "pyyaml>=6.0",
+    "openpyxl>=3.1",
+    "matplotlib>=3.8",
+    "pse-opendata>=0.2,<0.3",
+    "res-asset-kpi>=0.1,<0.2",
+]
+
+[project.optional-dependencies]
+# The companion projects are not on PyPI: they install from their public repositories.
+ops = ["bess-ops-warranty @ git+https://github.com/kwwaleszczynski-del/bess-ops-warranty.git"]
+strategies = ["pl-bess-revenue-stack @ git+https://github.com/kwwaleszczynski-del/pl-bess-revenue-stack.git"]
+degradation = ["bess-capacity-augmentation @ git+https://github.com/kwwaleszczynski-del/bess-capacity-augmentation.git"]
+all = [
+    "bess-ops-warranty @ git+https://github.com/kwwaleszczynski-del/bess-ops-warranty.git",
+    "pl-bess-revenue-stack @ git+https://github.com/kwwaleszczynski-del/pl-bess-revenue-stack.git",
+    "bess-capacity-augmentation @ git+https://github.com/kwwaleszczynski-del/bess-capacity-augmentation.git",
+]
+dev = ["pytest>=8"]
+
+[project.scripts]
+bess-report = "bess_report.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

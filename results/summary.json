@@ -1,0 +1,463 @@
+{
+  "site": "Reference BESS 1 MW / 2 MWh (Poland)",
+  "technical_nem": {
+    "months": 12,
+    "availability": 0.9753520069727261,
+    "availability_min_month": 0.8268518518518518,
+    "availability_offered": 0.6808716704718417,
+    "availability_offered_min_month": 0.5438640046296296,
+    "e_in_mwh": 162772.76693379722,
+    "e_out_mwh": 134977.7382126027,
+    "rte": 0.8291542985846555,
+    "rte_min_month": 0.7975730925288167,
+    "rte_max_month": 0.8587683867923196,
+    "efc_per_year": 337.4443455315067,
+    "mean_soc": 0.4815308069893553,
+    "technical_outage_hours_per_year": 215.91666666666666,
+    "availability_ok_months": 11,
+    "availability_ok_assessed": 12,
+    "rte_ok_months": 2,
+    "rte_ok_assessed": 12,
+    "cycles_ok_months": 9,
+    "cycles_ok_assessed": 12,
+    "duid": "RANGEB1",
+    "name": "Rangebank BESS",
+    "mw": 200.0,
+    "mwh": 400.0,
+    "usable_energy_trend_pct_per_year": -0.7041121161401124,
+    "rte_daily_median": 0.8337176260795941,
+    "valid_days": 340,
+    "withheld_share": 0.29333875207953247,
+    "stored_jumps_per_month": 3.8333333333333335,
+    "soh_temp_c": 25.0,
+    "soh_year1": 0.9610679211038049,
+    "soh_year10": 0.8249931516207069,
+    "model_fec_per_year": 361.3902160125853,
+    "soh_table": [
+      {
+        "years": 1,
+        "calendar_loss": 0.03134288435993088,
+        "cycle_loss": 0.007589194536264289,
+        "soh": 0.9610679211038049
+      },
+      {
+        "years": 5,
+        "calendar_loss": 0.07008482003972044,
+        "cycle_loss": 0.037945972681321445,
+        "soh": 0.8919692072789581
+      },
+      {
+        "years": 10,
+        "calendar_loss": 0.09911490301665032,
+        "cycle_loss": 0.07589194536264289,
+        "soh": 0.8249931516207069
+      },
+      {
+        "years": 15,
+        "calendar_loss": 0.12139046914811721,
+        "cycle_loss": 0.11383791804396433,
+        "soh": 0.7647716128079184
+      }
+    ]
+  },
+  "technical_ems": {
+    "months": 24,
+    "availability": 0.9789348900782834,
+    "availability_min_month": 0.6774193548387096,
+    "e_in_mwh": 89980.05783300078,
+    "e_out_mwh": 77624.4702442498,
+    "rte": 0.8606482807691305,
+    "rte_min_month": 0.831355512946772,
+    "rte_max_month": 0.8870786448602943,
+    "efc_per_year": 388.12235122124997,
+    "mean_soc": 0.32187992267588994,
+    "availability_ok_months": 21,
+    "availability_ok_assessed": 24,
+    "rte_ok_months": 18,
+    "rte_ok_assessed": 24,
+    "cycles_ok_months": 19,
+    "cycles_ok_assessed": 24,
+    "violations": 23,
+    "aux_share_of_import": 0.053880484326298855,
+    "ld_total_illustrative": 34929.147737239145,
+    "ld_currency": "EUR",
+    "soh_year1": 0.9636860971263007,
+    "soh_year10": 0.8322378455606559
+  },
+  "strategies": {
+    "da_perfect": {
+      "total_pln": 393556.86984318774,
+      "pln_per_mw_year": 393556.86984318774,
+      "month_mean_pln_per_mw": 32796.405820265645,
+      "month_std_pln_per_mw": 11476.66222417002,
+      "month_worst_pln_per_mw": 12421.602434328717,
+      "month_best_pln_per_mw": 50851.21379345885,
+      "months_below_half_of_mean": 2,
+      "discharged_mwh_per_year": 920.4924712827027,
+      "information": "prices of the delivery day (ceiling, not tradeable)",
+      "market_risk": "owner",
+      "cycles_per_day": 1.4010539897758034,
+      "short": "DA arbitrage, perfect foresight",
+      "share_of_ceiling": null
+    },
+    "da_asof": {
+      "total_pln": 321346.2966295621,
+      "pln_per_mw_year": 321346.2966295621,
+      "month_mean_pln_per_mw": 26778.858052463507,
+      "month_std_pln_per_mw": 11720.494597152863,
+      "month_worst_pln_per_mw": 7072.427643444403,
+      "month_best_pln_per_mw": 45513.761418838236,
+      "months_below_half_of_mean": 2,
+      "discharged_mwh_per_year": 935.3815645797202,
+      "information": "day-ahead prices of the previous 7 days",
+      "market_risk": "owner",
+      "cycles_per_day": 1.423716232237017,
+      "short": "DA arbitrage, as-of",
+      "share_of_ceiling": 0.8165180721088725
+    },
+    "stack_perfect": {
+      "total_pln": 3148742.525408304,
+      "pln_per_mw_year": 3148742.525408304,
+      "month_mean_pln_per_mw": 262395.210450692,
+      "month_std_pln_per_mw": 89990.27509499344,
+      "month_worst_pln_per_mw": 116244.2760244377,
+      "month_best_pln_per_mw": 441572.82462183177,
+      "months_below_half_of_mean": 1,
+      "discharged_mwh_per_year": 151.2308754332343,
+      "information": "prices of the delivery day, all products (ceiling, not tradeable)",
+      "market_risk": "owner",
+      "cycles_per_day": 0.23018398087250275,
+      "short": "Stack, perfect foresight",
+      "share_of_ceiling": null
+    },
+    "stack_asof": {
+      "total_pln": 2872470.413026533,
+      "pln_per_mw_year": 2872470.413026533,
+      "month_mean_pln_per_mw": 239372.53441887777,
+      "month_std_pln_per_mw": 82936.3006364781,
+      "month_worst_pln_per_mw": 107715.76826463643,
+      "month_best_pln_per_mw": 417628.64504157426,
+      "months_below_half_of_mean": 1,
+      "discharged_mwh_per_year": 60.80270076654741,
+      "information": "day-ahead and capacity prices of the previous 7 days",
+      "market_risk": "owner",
+      "cycles_per_day": 0.0925459676811985,
+      "short": "Stack, as-of",
+      "share_of_ceiling": 0.9122595416575238
+    },
+    "toll": {
+      "total_pln": 291000.0,
+      "pln_per_mw_year": 291000.0,
+      "month_mean_pln_per_mw": 24250.0,
+      "month_std_pln_per_mw": 0.0,
+      "month_worst_pln_per_mw": 24250.0,
+      "month_best_pln_per_mw": 24250.0,
+      "months_below_half_of_mean": 0,
+      "discharged_mwh_per_year": 0.0,
+      "information": "contract terms",
+      "market_risk": "offtaker",
+      "cycles_per_day": 0.0,
+      "short": "Tolling",
+      "share_of_ceiling": null
+    },
+    "cm_2029": {
+      "total_pln": 478858.4856295622,
+      "pln_per_mw_year": 478858.4856295622,
+      "month_mean_pln_per_mw": 39904.87380246352,
+      "month_std_pln_per_mw": 11720.494597152861,
+      "month_worst_pln_per_mw": 20198.443393444402,
+      "month_best_pln_per_mw": 58639.777168838235,
+      "months_below_half_of_mean": 0,
+      "discharged_mwh_per_year": 935.3815645797202,
+      "information": "day-ahead prices of the previous 7 days, contract terms",
+      "market_risk": "owner",
+      "cycles_per_day": 1.423716232237017,
+      "short": "DA + capacity market, 2029 terms",
+      "share_of_ceiling": null
+    },
+    "cm_2030": {
+      "total_pln": 381744.4892895621,
+      "pln_per_mw_year": 381744.4892895621,
+      "month_mean_pln_per_mw": 31812.040774130175,
+      "month_std_pln_per_mw": 11720.494597152861,
+      "month_worst_pln_per_mw": 12105.610365111068,
+      "month_best_pln_per_mw": 50546.9441405049,
+      "months_below_half_of_mean": 2,
+      "discharged_mwh_per_year": 935.3815645797202,
+      "information": "day-ahead prices of the previous 7 days, contract terms",
+      "market_risk": "owner",
+      "cycles_per_day": 1.423716232237017,
+      "short": "DA + capacity market, 2030 terms",
+      "share_of_ceiling": null
+    }
+  },
+  "strategy_meta": {
+    "availability": 0.97,
+    "days": 365,
+    "first_day": "2025-10-01",
+    "last_day": "2026-09-30",
+    "capacity_market": [
+      {
+        "auction": 2029,
+        "closing_price_pln_kw_year": 264.9,
+        "kwd": 0.613,
+        "pln_per_mw_year": 162383.7,
+        "price_source": "auction of 12 Dec 2024, closed in round 7; URE Information No. 02/2025 of 3 Jan 2025",
+        "kwd_source": "Dz.U. 2024 poz. 1154, par. 10 pkt 9"
+      },
+      {
+        "auction": 2030,
+        "closing_price_pln_kw_year": 465.02,
+        "kwd": 0.1339,
+        "pln_per_mw_year": 62266.17799999999,
+        "price_source": "auction of 11 Dec 2025, closed in round 2; URE Information No. 1/2026 of 2 Jan 2026",
+        "kwd_source": "Dz.U. 2025 poz. 1066, par. 10 pkt 9 (group shared with pumped storage)"
+      }
+    ]
+  },
+  "financial": {
+    "bridge": {
+      "start": 2663941.863097709,
+      "end": 2972536.347230907,
+      "steps": {
+        "step0": {
+          "label": "Market vs prior year",
+          "value": 303040.7389288242
+        },
+        "step1": {
+          "label": "RTE vs nameplate",
+          "value": -2945.4812027271837
+        },
+        "step2": {
+          "label": "Availability vs budget",
+          "value": 8499.226407100912
+        },
+        "step3": {
+          "label": "Fixed costs vs budget",
+          "value": 0.0
+        }
+      }
+    },
+    "variance": {
+      "Day-ahead market sales": {
+        "actual": 31573.789334069927,
+        "budget": 34443.03621852104,
+        "difference": -2869.246884451113,
+        "difference_pct": -0.08330412180411187
+      },
+      "FCR capacity": {
+        "actual": 243661.16716148992,
+        "budget": 155818.7925793318,
+        "difference": 87842.37458215811,
+        "difference_pct": 0.5637469853800532
+      },
+      "aFRR capacity": {
+        "actual": 1824845.386183527,
+        "budget": 1568403.7109583332,
+        "difference": 256441.67522519385,
+        "difference_pct": 0.16350488935562496
+      },
+      "mFRRd capacity": {
+        "actual": 699822.8812476867,
+        "budget": 829769.793962884,
+        "difference": -129946.91271519731,
+        "difference_pct": -0.1566059811536233
+      },
+      "RR capacity": {
+        "actual": 109122.94185996485,
+        "budget": 20068.03032548881,
+        "difference": 89054.91153447604,
+        "difference_pct": 4.437650835187627
+      },
+      "Capacity market": {
+        "actual": 158358.79259991823,
+        "budget": 157512.189,
+        "difference": 846.6035999182204,
+        "difference_pct": 0.005374844990048487
+      },
+      "Day-ahead market purchases": {
+        "actual": 30127.21710076964,
+        "budget": 36643.24722094874,
+        "difference": -6516.030120179097,
+        "difference_pct": -0.17782349039344741
+      },
+      "Degradation allowance": {
+        "actual": 1721.3940549803185,
+        "budget": 2430.4427259014233,
+        "difference": -709.0486709211048,
+        "difference_pct": -0.29173642454714777
+      },
+      "Operation and maintenance": {
+        "actual": 30000.0,
+        "budget": 30000.0,
+        "difference": 0.0,
+        "difference_pct": 0.0
+      },
+      "Insurance": {
+        "actual": 8000.000000000001,
+        "budget": 8000.000000000001,
+        "difference": 0.0,
+        "difference_pct": 0.0
+      },
+      "Grid fees": {
+        "actual": 20000.0,
+        "budget": 20000.0,
+        "difference": 0.0,
+        "difference_pct": 0.0
+      },
+      "Land and other fixed costs": {
+        "actual": 5000.0,
+        "budget": 5000.0,
+        "difference": 0.0,
+        "difference_pct": 0.0
+      },
+      "revenue": {
+        "actual": 3067384.9583866564,
+        "budget": 2766015.553044559,
+        "difference": 301369.4053420974,
+        "difference_pct": 0.10895434228863228
+      },
+      "variable_costs": {
+        "actual": 31848.611155749964,
+        "budget": 39073.689946850165,
+        "difference": -7225.078791100201,
+        "difference_pct": -0.1849090475183707
+      },
+      "gross_margin": {
+        "actual": 3035536.347230907,
+        "budget": 2726941.863097709,
+        "difference": 308594.4841331979,
+        "difference_pct": 0.11316503967658685
+      },
+      "fixed_costs": {
+        "actual": 63000.0,
+        "budget": 63000.0,
+        "difference": 0.0,
+        "difference_pct": 0.0
+      },
+      "margin": {
+        "actual": 2972536.347230907,
+        "budget": 2663941.863097709,
+        "difference": 308594.4841331979,
+        "difference_pct": 0.115841298343634
+      }
+    },
+    "mix": {
+      "Day-ahead market sales": {
+        "revenue_pln": 31573.789334069927,
+        "share": 0.01029338989478409
+      },
+      "FCR capacity": {
+        "revenue_pln": 243661.16716148992,
+        "share": 0.07943612245189065
+      },
+      "aFRR capacity": {
+        "revenue_pln": 1824845.386183527,
+        "share": 0.5949189328825997
+      },
+      "mFRRd capacity": {
+        "revenue_pln": 699822.8812476867,
+        "share": 0.22814967496475255
+      },
+      "RR capacity": {
+        "revenue_pln": 109122.94185996485,
+        "share": 0.03557523536835752
+      },
+      "Capacity market": {
+        "revenue_pln": 158358.79259991823,
+        "share": 0.0516266444376156
+      }
+    },
+    "assumptions": {
+      "budget_availability": 0.97,
+      "nameplate_rte": 0.87,
+      "measured_rte_mean": 0.8291542985846555,
+      "measured_availability_mean": 0.9752135996403468,
+      "budget_rule": "same strategy, same calendar months one year earlier, nameplate efficiency, budgeted availability"
+    },
+    "totals": {
+      "da_sales": 31573.789334069927,
+      "fcr_capacity": 243661.16716148992,
+      "afrr_capacity": 1824845.386183527,
+      "mfrrd_capacity": 699822.8812476867,
+      "rr_capacity": 109122.94185996485,
+      "afrr_energy": 0.0,
+      "imbalance": 0.0,
+      "capacity_market": 158358.79259991823,
+      "toll": 0.0,
+      "other_revenue": 0.0,
+      "da_purchases": 30127.21710076964,
+      "aux_energy": 0.0,
+      "degradation": 1721.3940549803185,
+      "om": 30000.0,
+      "insurance": 8000.000000000001,
+      "grid_fees": 20000.0,
+      "land_and_other": 5000.0,
+      "other_cost": 0.0,
+      "revenue": 3067384.9583866564,
+      "variable_costs": 31848.611155749964,
+      "gross_margin": 3035536.347230907,
+      "fixed_costs": 63000.0,
+      "margin": 2972536.347230907
+    },
+    "budget_totals": {
+      "da_sales": 34443.03621852104,
+      "fcr_capacity": 155818.7925793318,
+      "afrr_capacity": 1568403.7109583332,
+      "mfrrd_capacity": 829769.793962884,
+      "rr_capacity": 20068.03032548881,
+      "afrr_energy": 0.0,
+      "imbalance": 0.0,
+      "capacity_market": 157512.189,
+      "toll": 0.0,
+      "other_revenue": 0.0,
+      "da_purchases": 36643.24722094874,
+      "aux_energy": 0.0,
+      "degradation": 2430.4427259014233,
+      "om": 30000.0,
+      "insurance": 8000.000000000001,
+      "grid_fees": 20000.0,
+      "land_and_other": 5000.0,
+      "other_cost": 0.0,
+      "revenue": 2766015.553044559,
+      "variable_costs": 39073.689946850165,
+      "gross_margin": 2726941.863097709,
+      "fixed_costs": 63000.0,
+      "margin": 2663941.863097709
+    }
+  },
+  "assumptions": {
+    "lookback_days": 7,
+    "battery": {
+      "power_mw": 1.0,
+      "energy_mwh": 2.0,
+      "round_trip_efficiency": 0.87,
+      "soc_min": 0.05,
+      "soc_max": 0.95,
+      "soc_start": 0.5,
+      "max_cycles_per_day": 1.5,
+      "degradation_cost": 30.0
+    },
+    "guarantees": {
+      "availability": 0.97,
+      "rte": 0.85,
+      "efc_per_year": 365
+    },
+    "opex": {
+      "om": 30000,
+      "insurance": 8000,
+      "grid_fees": 20000,
+      "land_and_other": 5000
+    },
+    "toll": {
+      "pln_per_mw_year": 300000
+    },
+    "budget": {
+      "availability": 0.97
+    },
+    "period": {
+      "start": "2025-10-01",
+      "end": "2026-09-30"
+    }
+  }
+}
