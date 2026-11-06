@@ -77,10 +77,26 @@ def run(root: Path, site_path: Path, workers: int = 1, nem_duid: str = NEM_DUID)
     out["technical_nem"], out["technical_ems"] = nem.summary, ems.summary
     out["technical_nem"]["soh_table"] = nem.soh.reset_index().to_dict("records")
 
+    # trading report of the same battery: metered energy margin against benchmarks on the same prices
+    from bess_ops.nem import unit_site
+
+    from bess_report import nem_trading
+    from bess_report.nemslice import load_prices
+    cache = load_slice(root / "data/example/nem")
+    tr = nem_trading.run(unit_site(cache, nem_duid), load_prices(root / "data/example/nem"), nem.summary["rte"],
+                         nem.summary["mw"], nem.summary["mwh"], workers)
+    tr["monthly"].to_csv(results / "nem_trading_monthly.csv")
+    tr["bridge"].frame().to_csv(results / "nem_trading_bridge.csv", index=False)
+    reports.nem_trading_report(tr, nem.summary["name"], docs / "report")
+    out["nem_trading"] = {**tr["summary"], "bridge": {f"step{i}": {"label": k, "value": v}
+                                                      for i, (k, v) in enumerate(tr["bridge"].steps)},
+                          "start": tr["bridge"].start, "end": tr["bridge"].end}
+
     # strategies on one evaluation
     prices, capacity = pse_data.load_slice(root / "data/example")
     days = build_days(prices, capacity)
     runs = scenario.run_all(site, days, workers)
+    runs = scenario.with_activation(site, runs, prices, pse_data.load_activation(root / "data/example"))
     table = scenario.compare(site, runs)
     a = table.attrs["availability"]
     monthly = pd.DataFrame({k: scenario.margin_by_month(runs[k]) * a / site.battery.power_mw for k in runs})

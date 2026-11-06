@@ -155,3 +155,9 @@ def test_forecast_sensitivity_default_row_is_the_main_result(summary):
         assert d["pln_per_mw_year"] == pytest.approx(st[f"{kind}_asof"]["pln_per_mw_year"], rel=1e-9)
         assert d["share_of_ceiling"] == pytest.approx(st[f"{kind}_asof"]["share_of_ceiling"], rel=1e-9)
     assert all(0 < v["share_of_ceiling"] <= 1.0001 for v in fs.values())
+
+
+def test_activation_variant_in_the_results(summary):
+    st = summary["strategies"]
+    assert st["stack_act_asof"]["pln_per_mw_year"] > st["stack_asof"]["pln_per_mw_year"]      # the README says "more"
+    assert 0 < st["stack_act_asof"]["share_of_ceiling"] <= 1.0001

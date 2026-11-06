@@ -84,6 +84,36 @@
     "soh_year1": 0.9636860971263007,
     "soh_year10": 0.8322378455606559
   },
+  "nem_trading": {
+    "days": 357,
+    "first_day": "2025-10-08",
+    "last_day": "2026-09-29",
+    "rte": 0.8291542985846555,
+    "power_mw": 200.0,
+    "energy_mwh": 400.0,
+    "actual": 9978422.014191162,
+    "asof": 8171769.705560185,
+    "perfect": 17169809.468775947,
+    "export": 13192128.471717544,
+    "import": 3213706.4575263835,
+    "capture_vs_asof": 1.221084584334493,
+    "capture_vs_perfect": 0.581160905270228,
+    "actual_per_mw_year": 51010.14054873633,
+    "asof_per_mw_year": 41774.452976603185,
+    "perfect_per_mw_year": 87772.83551965296,
+    "bridge": {
+      "step0": {
+        "label": "Forecast: as-of vs perfect",
+        "value": -8998039.763215762
+      },
+      "step1": {
+        "label": "Operation vs as-of benchmark",
+        "value": 1806652.3086309768
+      }
+    },
+    "start": 17169809.468775947,
+    "end": 9978422.014191162
+  },
   "strategies": {
     "da_perfect": {
       "total_pln": 393556.86984318774,
@@ -144,6 +174,36 @@
       "cycles_per_day": 0.0925459676811985,
       "short": "Stack, as-of",
       "share_of_ceiling": 0.9122595416575238
+    },
+    "stack_act_perfect": {
+      "total_pln": 3340949.3926964393,
+      "pln_per_mw_year": 3340949.3926964393,
+      "month_mean_pln_per_mw": 278412.44939136994,
+      "month_std_pln_per_mw": 92353.42640476055,
+      "month_worst_pln_per_mw": 121159.29908496297,
+      "month_best_pln_per_mw": 458026.7311569712,
+      "months_below_half_of_mean": 1,
+      "discharged_mwh_per_year": 151.2308754332343,
+      "information": "prices of the delivery day, all products, aFRR activation ex post (ceiling)",
+      "market_risk": "owner",
+      "cycles_per_day": 0.23018398087250275,
+      "short": "Stack + aFRR energy, perfect foresight",
+      "share_of_ceiling": null
+    },
+    "stack_act_asof": {
+      "total_pln": 3088617.677147988,
+      "pln_per_mw_year": 3088617.677147988,
+      "month_mean_pln_per_mw": 257384.80642899903,
+      "month_std_pln_per_mw": 83764.68253984585,
+      "month_worst_pln_per_mw": 112989.36111624728,
+      "month_best_pln_per_mw": 438059.0413028046,
+      "months_below_half_of_mean": 1,
+      "discharged_mwh_per_year": 60.80270076654741,
+      "information": "as the stack, activation priced ex post with pro-rata activation",
+      "market_risk": "owner",
+      "cycles_per_day": 0.0925459676811985,
+      "short": "Stack + aFRR energy, as-of",
+      "share_of_ceiling": 0.9244730506543838
     },
     "toll": {
       "total_pln": 291000.0,

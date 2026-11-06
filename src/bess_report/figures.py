@@ -156,7 +156,8 @@ def revenue_mix_chart(stmt: pd.DataFrame, lines: dict[str, str]) -> Figure:
     return fig
 
 
-def bridge_chart(frame: pd.DataFrame, unit: float = 1e3, unit_label: str = "thousand PLN") -> Figure:
+def bridge_chart(frame: pd.DataFrame, unit: float = 1e3, unit_label: str = "thousand PLN",
+                 title: str = "Budget to actual margin") -> Figure:
     """Waterfall; labels at the ends of the bars, step names wrapped on the axis."""
     import textwrap
 
@@ -190,7 +191,7 @@ def bridge_chart(frame: pd.DataFrame, unit: float = 1e3, unit_label: str = "thou
     ax.set_xticks(x, [chr(10).join(textwrap.wrap(s, 12, break_long_words=False)) for s in frame["label"]], fontsize=8.5)
     ax.set_ylim(floor, top + 0.09 * span)
     ax.set_ylabel(f"Margin, {unit_label}" + (" (axis cut)" if cut else ""))
-    ax.set_title("Budget to actual margin")
+    ax.set_title(title)
     return fig
 
 
@@ -245,10 +246,26 @@ def saturation_chart(table: pd.DataFrame) -> Figure:
     return fig
 
 
+def trading_chart(monthly: pd.DataFrame) -> Figure:
+    """Monthly energy margin of the battery against the as-of and the perfect-foresight benchmark."""
+    fig, ax = plt.subplots(figsize=(WIDTH, 4.6))
+    x = np.arange(len(monthly))
+    w = 0.27
+    for k, (col, label, colour) in enumerate((("actual", "Actual (metered x price)", C["blue"]),
+                                              ("asof", "Benchmark, as-of forecast", C["orange"]),
+                                              ("perfect", "Benchmark, perfect foresight", C["grey"]))):
+        ax.bar(x + (k - 1) * w, monthly[col] / 1e3, width=w, color=colour, label=label)
+    ax.set_xticks(x, _months(monthly.index), rotation=45, ha="right")
+    ax.set_ylabel("Energy margin, thousand AUD")
+    ax.set_title("Energy margin by month")
+    _legend_below(ax, 1, -0.42)
+    return fig
+
+
 def strategy_monthly_chart(monthly: pd.DataFrame) -> Figure:
     fig, ax = plt.subplots(figsize=(WIDTH, 4.6))
     x = np.arange(len(monthly))
-    palette = [C["blue"], C["orange"], C["green"], C["red"], C["purple"], C["teal"], C["brown"]]
+    palette = [C["blue"], C["orange"], C["green"], C["red"], C["purple"], C["teal"], C["brown"], "#d16ba5", "#9aa5b1"]
     for i, col in enumerate(monthly.columns):
         ax.plot(x, monthly[col] / 1e3, marker="o", ms=4, color=palette[i % len(palette)], label=col,
                 ls="--" if "perfect" in col else "-")

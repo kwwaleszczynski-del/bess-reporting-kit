@@ -59,3 +59,30 @@ def load_slice(path: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
         if not (path / f).exists():
             raise FileNotFoundError(f"{path / f} missing; build it with: python -m bess_report fetch-pse")
     return pd.read_parquet(path / PRICE_FILE), pd.read_parquet(path / CAPACITY_FILE)
+
+
+ACTIVATION_FILES = {"afrr_energy": "pse_afrr_energy.parquet", "afrr_price": "pse_afrr_price.parquet",
+                    "cap_volume": "pse_cap_volume.parquet", "sup_volume": "pse_sup_volume.parquet"}
+
+
+def fetch_activation(start: date, end: date, cache_dir: Path) -> dict[str, pd.DataFrame]:
+    """The PSE series behind the aFRR activation variant, through ``bess_stack.pse_api`` (which wraps pse-opendata):
+    activated aFRR energy (eb-rozl), its prices (crb-rozl), and the capacity bought in the basic (mbp-tp) and the
+    supplementary (mbu-tu) procurement. Published since the Polish connection to the aFRR platform in 2025."""
+    from bess_stack.pse_api import load_series
+
+    return {name: load_series(name, start, end, cache_dir)[0] for name in ACTIVATION_FILES}
+
+
+def save_activation(frames: dict[str, pd.DataFrame], path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    for name, df in frames.items():
+        df.to_parquet(path / ACTIVATION_FILES[name], compression="zstd")
+
+
+def load_activation(path: Path) -> dict[str, pd.DataFrame]:
+    path = Path(path)
+    missing = [f for f in ACTIVATION_FILES.values() if not (path / f).exists()]
+    if missing:
+        raise FileNotFoundError(f"{path}: missing {missing}; build them with: python -m bess_report fetch-pse")
+    return {name: pd.read_parquet(path / f) for name, f in ACTIVATION_FILES.items()}

@@ -46,6 +46,8 @@ A 1.0 MW / 2.0 MWh battery, 365 delivery days
 | DA arbitrage, as-of | day-ahead prices of the previous 7 days | 321 346 | 82 % | 7 072 | 45 514 |
 | Stack, perfect foresight | prices of the delivery day, all products (ceiling, not tradeable) | 3 148 743 |  | 116 244 | 441 573 |
 | Stack, as-of | day-ahead and capacity prices of the previous 7 days | 2 872 470 | 91 % | 107 716 | 417 629 |
+| Stack + aFRR energy, perfect foresight | prices of the delivery day, all products, aFRR activation ex post (ceiling) | 3 340 949 |  | 121 159 | 458 027 |
+| Stack + aFRR energy, as-of | as the stack, activation priced ex post with pro-rata activation | 3 088 618 | 92 % | 112 989 | 438 059 |
 | Tolling | contract terms | 291 000 |  | 24 250 | 24 250 |
 | DA + capacity market, 2029 terms | day-ahead prices of the previous 7 days, contract terms | 478 858 |  | 20 198 | 58 640 |
 | DA + capacity market, 2030 terms | day-ahead prices of the previous 7 days, contract terms | 381 744 |  | 12 106 | 50 547 |
@@ -57,6 +59,9 @@ A 1.0 MW / 2.0 MWh battery, 365 delivery days
 - **Forecasting costs money, less in the stack.** With a plain seven-day average forecast the day-ahead
   strategy keeps 82 % of its perfect-foresight ceiling, the stack
   91 %.
+- **aFRR activation energy adds a layer on top of the capacity payments.** Priced ex post with pro-rata activation of the
+  capacity bought (the variant of pl-bess-revenue-stack, net of buying the energy back and of the degradation allowance),
+  the as-of stack earns 7.5 % more.
 - **A toll is a price for removing the market risk.** The placeholder toll of 300 000 PLN/MW/year
   has no monthly spread at all (scaled by the assumed availability it pays 291 000); the as-of day-ahead strategy earned 321 346 PLN/MW/year with a worst month of
   7 072 PLN/MW. A toll below the value of the strategy it replaces is the price of the risk.
@@ -140,6 +145,27 @@ The same layout takes a long EMS or SCADA table. On the synthetic battery of bes
 | Cycles per year (EFC) | 388.1 |
 | Warranty violations found | 23 |
 | Illustrative damages | 34 929 EUR |
+
+### Trading report: what the battery earned against what it could have
+
+For the same battery, the metered power times the regional reference price of every five-minute interval gives the actual
+energy margin. Two benchmarks of the same size and efficiency run on the same prices and days: perfect foresight, and an
+as-of plan from the seven-day average. Frequency control revenue, usually the larger part for a grid battery, is not in
+this energy-only view.
+
+| Step | AUD |
+|---|---:|
+| Perfect foresight (ceiling) | 17 169 809 |
+| Forecast: as-of vs perfect | -8 998 040 |
+| Operation vs as-of benchmark | +1 806 652 |
+| Actual energy margin | 9 978 422 |
+
+- The battery's energy margin was 122 % of the as-of benchmark and 58 % of the
+  perfect-foresight ceiling, 51 010 AUD per MW and year, over 357 complete days.
+- The as-of step shows the cost of forecasting on this market; the last step is what the energy benchmark does not know
+  (frequency control, availability, the operator's own forecast), not a verdict on the operator.
+
+![trading bridge](docs/report/img/trading-nem_bridge.png)
 
 ### Financial report: a simulated year
 

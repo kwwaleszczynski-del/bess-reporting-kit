@@ -65,6 +65,8 @@ def derive(s: dict) -> dict:
     d["cm_best_extra"] = max(v["pln_per_mw_year"] - st["da_asof"]["pln_per_mw_year"]
                              for k, v in st.items() if k.startswith("cm_"))
     d["strategy_days"] = s["strategy_meta"]["days"]
+    if "stack_act_asof" in st:
+        d["act_uplift"] = st["stack_act_asof"]["pln_per_mw_year"] / st["stack_asof"]["pln_per_mw_year"] - 1
     sat = s.get("saturation")
     if sat:
         sizes = sorted(int(k) for k in sat["rows"] if int(k) > 0)
@@ -93,7 +95,7 @@ def _md(header: list[str], rows: list[list[str]], align: str | None = None) -> s
 def table(name: str, s: dict) -> str:
     st = s["strategies"]
     if name == "strategies":
-        order = ["da_perfect", "da_asof", "stack_perfect", "stack_asof", "toll"] + sorted(k for k in st if k.startswith("cm_"))
+        order = ["da_perfect", "da_asof", "stack_perfect", "stack_asof", "stack_act_perfect", "stack_act_asof", "toll"] + sorted(k for k in st if k.startswith("cm_"))
         rows = [[st[k]["short"], st[k]["information"], fmt(st[k]["pln_per_mw_year"], "pln"),
                  fmt(st[k]["share_of_ceiling"], "pct0") if st[k].get("share_of_ceiling") is not None else "",
                  fmt(st[k]["month_worst_pln_per_mw"], "pln"), fmt(st[k]["month_best_pln_per_mw"], "pln")]
@@ -114,6 +116,12 @@ def table(name: str, s: dict) -> str:
                 for lb in lbs]
         return _md(["Average over the previous days", "Day-ahead, PLN/MW/year", "Share of ceiling", "Stack, PLN/MW/year",
                     "Share of ceiling"], rows, "---:|---:|---:|---:|---:")
+    if name == "trading":
+        n = s["nem_trading"]
+        rows = [["Perfect foresight (ceiling)", fmt(n["start"], "pln")]]
+        rows += [[v["label"], f"{v['value']:+,.0f}".replace(",", " ")] for v in n["bridge"].values()]
+        rows.append(["Actual energy margin", fmt(n["end"], "pln")])
+        return _md(["Step", "AUD"], rows)
     if name == "bridge":
         b = s["financial"]["bridge"]
         rows = [["Budget margin", fmt(b["start"], "pln")]]

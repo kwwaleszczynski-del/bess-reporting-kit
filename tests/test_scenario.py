@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -55,3 +57,19 @@ def test_missing_technical_availability_is_an_error(days, short_site, runs):
     tech = pd.DataFrame({"rte": [0.8], "availability": [np.nan]}, index=SC.month_labels(short_site.first_day, short_site.last_day))
     with pytest.raises(ValueError, match="no availability"):
         SC.simulate_year(short_site, days, runs, tech)
+
+
+def test_activation_variant_adds_the_net_activation_margin(days, short_site, runs):
+    from bess_report import data
+    from bess_report.strategies import margin
+    prices, _ = data.load_slice(Path(__file__).resolve().parents[1] / "data/example")
+    act = data.load_activation(Path(__file__).resolve().parents[1] / "data/example")
+    out = SC.with_activation(short_site, runs, prices, act)
+    assert {"stack_act_perfect", "stack_act_asof"} <= set(out)
+    for mode in ("perfect", "asof"):
+        base, var = out[f"stack_{mode}"], out[f"stack_act_{mode}"]
+        assert var["afrr_energy"].notna().all() and len(var) == len(base)
+        assert (margin(var) - margin(base)).to_numpy() == pytest.approx(var["afrr_energy"].to_numpy())
+    assert "afrr_energy" not in runs["stack_asof"]            # the original runs are not changed
+    t = SC.compare(short_site, out)
+    assert 0 < t.loc["stack_act_asof", "share_of_ceiling"] < 2

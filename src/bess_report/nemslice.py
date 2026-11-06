@@ -39,6 +39,13 @@ def cut(nem_dir: Path, extra_dir: Path, duid: str, out: Path) -> dict:
         frames["stations"] = cache.stations[cache.stations["STATIONID"] == station]
     else:
         frames["stations"] = pd.DataFrame({"STATIONID": [station], "STATIONNAME": [duid]})
+    region = frames["registry"]["REGIONID"].iloc[-1]
+    price_files = sorted((nem_dir / "price").glob("*.parquet"))
+    if price_files:                       # regional reference price (RRP) of the unit's region, for the trading report
+        px = pd.concat([pd.read_parquet(f, columns=["SETTLEMENTDATE", "REGIONID", "INTERVENTION", "RRP"])
+                        for f in price_files], ignore_index=True)
+        px = px[(px["REGIONID"] == region)].sort_values("INTERVENTION").drop_duplicates("SETTLEMENTDATE")
+        frames["price"] = px[["SETTLEMENTDATE", "RRP"]]
     sizes = {}
     for name, df in frames.items():
         path = out / f"{name}.parquet"
@@ -46,6 +53,14 @@ def cut(nem_dir: Path, extra_dir: Path, duid: str, out: Path) -> dict:
         sizes[name] = (len(df), path.stat().st_size)
         log.info("%s: %d rows, %.0f kB", name, *(sizes[name][0], sizes[name][1] / 1e3))
     return sizes
+
+
+def load_prices(path: Path) -> pd.Series:
+    """The regional reference price (AUD/MWh) of the battery's region, indexed by interval start (NEM market time,
+    as the ``unit_site`` frame of bess_ops.nem)."""
+    px = pd.read_parquet(Path(path) / "price.parquet")
+    s = pd.Series(px["RRP"].to_numpy(float), index=pd.DatetimeIndex(px["SETTLEMENTDATE"]) - pd.Timedelta("5min"))
+    return s[~s.index.duplicated()].sort_index()
 
 
 def load_slice(path: Path):

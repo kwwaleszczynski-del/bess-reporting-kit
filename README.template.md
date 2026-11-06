@@ -49,6 +49,9 @@ A {{assumptions.battery.power_mw|num1}} MW / {{assumptions.battery.energy_mwh|nu
 - **Forecasting costs money, less in the stack.** With a plain seven-day average forecast the day-ahead
   strategy keeps {{strategies.da_asof.share_of_ceiling|pct0}} of its perfect-foresight ceiling, the stack
   {{strategies.stack_asof.share_of_ceiling|pct0}}.
+- **aFRR activation energy adds a layer on top of the capacity payments.** Priced ex post with pro-rata activation of the
+  capacity bought (the variant of pl-bess-revenue-stack, net of buying the energy back and of the degradation allowance),
+  the as-of stack earns {{derived.act_uplift|pct}} more.
 - **A toll is a price for removing the market risk.** The placeholder toll of {{assumptions.toll.pln_per_mw_year|pln}} PLN/MW/year
   has no monthly spread at all (scaled by the assumed availability it pays {{strategies.toll.pln_per_mw_year|pln}}); the as-of day-ahead strategy earned {{strategies.da_asof.pln_per_mw_year|pln}} PLN/MW/year with a worst month of
   {{strategies.da_asof.month_worst_pln_per_mw|pln}} PLN/MW. A toll below the value of the strategy it replaces is the price of the risk.
@@ -106,6 +109,22 @@ assessed against the illustrative guarantees of the site file:
 The same layout takes a long EMS or SCADA table. On the synthetic battery of bess-ops-warranty, whose truth is known:
 
 {{table:ems}}
+
+### Trading report: what the battery earned against what it could have
+
+For the same battery, the metered power times the regional reference price of every five-minute interval gives the actual
+energy margin. Two benchmarks of the same size and efficiency run on the same prices and days: perfect foresight, and an
+as-of plan from the seven-day average. Frequency control revenue, usually the larger part for a grid battery, is not in
+this energy-only view.
+
+{{table:trading}}
+
+- The battery's energy margin was {{nem_trading.capture_vs_asof|pct0}} of the as-of benchmark and {{nem_trading.capture_vs_perfect|pct0}} of the
+  perfect-foresight ceiling, {{nem_trading.actual_per_mw_year|pln}} AUD per MW and year, over {{nem_trading.days|int}} complete days.
+- The as-of step shows the cost of forecasting on this market; the last step is what the energy benchmark does not know
+  (frequency control, availability, the operator's own forecast), not a verdict on the operator.
+
+![trading bridge](docs/report/img/trading-nem_bridge.png)
 
 ### Financial report: a simulated year
 

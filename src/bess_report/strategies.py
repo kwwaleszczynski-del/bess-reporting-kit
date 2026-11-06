@@ -137,6 +137,7 @@ def settle(day: DayData, res, battery: Battery) -> dict:
         cap[LINE_OF_PRODUCT[p]] += float(np.sum(paid[:, j] * r[:, j]))
     out.update(cap)
     out["reserved_mw_hours"] = float(r.sum())
+    out["_reserves"] = r.copy()                     # hours x PRODUCTS, kept for the activation variant
     return out
 
 
@@ -175,11 +176,15 @@ def run_strategy(days: list[DayData], kind: str, mode: str, battery: Battery, fi
             rows = list(pool.map(_solve, tasks, chunksize=8))
     else:
         rows = [_solve(t) for t in tasks]
+    reserves = {r["business_date"]: r.pop("_reserves") for r in rows}
     daily = pd.DataFrame(rows).set_index("business_date").sort_index()
+    daily.attrs["reserves"] = reserves
     log.info("%s/%s: %d days, margin %.0f PLN", kind, mode, len(daily), margin(daily).sum())
     return daily
 
 
 def margin(daily: pd.DataFrame) -> pd.Series:
-    """Gross margin per day: revenues net of energy purchases and the degradation cost."""
-    return daily[REVENUE_COLUMNS].sum(axis=1) - daily["degradation"]
+    """Gross margin per day: revenues net of energy purchases and the degradation cost (the net margin of aFRR
+    activation, when a run has it, counts as revenue)."""
+    cols = [c for c in (*REVENUE_COLUMNS, "afrr_energy") if c in daily]
+    return daily[cols].sum(axis=1) - daily["degradation"]

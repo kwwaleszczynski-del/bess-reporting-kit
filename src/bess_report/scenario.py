@@ -34,6 +34,8 @@ log = logging.getLogger(__name__)
 STEP_MARKET, STEP_RTE = "Market vs prior year", "RTE vs nameplate"
 STEP_AVAILABILITY, STEP_FIXED = "Availability vs budget", "Fixed costs vs budget"
 INFORMATION = {
+    "stack_act_perfect": "prices of the delivery day, all products, aFRR activation ex post (ceiling)",
+    "stack_act_asof": "as the stack, activation priced ex post with pro-rata activation",
     "da_perfect": "prices of the delivery day (ceiling, not tradeable)",
     "da_asof": "day-ahead prices of the previous 7 days",
     "stack_perfect": "prices of the delivery day, all products (ceiling, not tradeable)",
@@ -41,9 +43,12 @@ INFORMATION = {
     "toll": "contract terms",
     "cm": "day-ahead prices of the previous 7 days, contract terms",
 }
-SHORT = {"da_perfect": "DA arbitrage, perfect foresight", "da_asof": "DA arbitrage, as-of",
+SHORT = {"stack_act_perfect": "Stack + aFRR energy, perfect foresight", "stack_act_asof": "Stack + aFRR energy, as-of",
+         "da_perfect": "DA arbitrage, perfect foresight", "da_asof": "DA arbitrage, as-of",
          "stack_perfect": "Stack, perfect foresight", "stack_asof": "Stack, as-of", "toll": "Tolling"}
 LABELS = {
+    "stack_act_perfect": "Revenue stack with aFRR activation, perfect foresight",
+    "stack_act_asof": "Revenue stack with aFRR activation, as-of forecast",
     "da_perfect": "Day-ahead arbitrage, perfect foresight",
     "da_asof": "Day-ahead arbitrage, as-of forecast",
     "stack_perfect": "Revenue stack, perfect foresight",
@@ -70,6 +75,42 @@ def run_all(site: Site, days: list[DayData], workers: int = 1) -> dict[str, pd.D
         for mode in ("perfect", "asof"):
             out[f"{kind}_{mode}"] = run_strategy(days, kind, mode, site.battery, site.first_day, site.last_day,
                                                  workers=workers)
+    return out
+
+
+def with_activation(site: Site, runs: dict[str, pd.DataFrame], prices: pd.DataFrame, activation: dict) -> dict:
+    """Add ``stack_act_perfect`` and ``stack_act_asof``: the stack runs with the net margin of aFRR activation
+    (``bess_stack.activation``: pro-rata activation of the capacity bought, up energy paid the aFRR up price and
+    bought back at the day-ahead price with losses, down energy absorbed at the aFRR down price and sold at the
+    day-ahead price, ex post on published data) in an ``afrr_energy`` column."""
+    from bess_stack.activation import activation_ratio, activation_revenue
+    from bess_stack.backtest import Day
+
+    def unit(df):
+        df = df.copy()
+        df.index = df.index.as_unit("us")
+        return df
+
+    energy = unit(prices[(prices["business_date"] >= site.first_day) & (prices["business_date"] <= site.last_day)])
+    ratio = activation_ratio(unit(activation["afrr_energy"]), unit(activation["cap_volume"]),
+                             unit(activation["sup_volume"]))
+    afrr_price = unit(activation["afrr_price"])
+    params = site.battery.params()
+    out = dict(runs)
+    for mode in ("perfect", "asof"):
+        base = runs[f"stack_{mode}"]
+        hour_of = {}
+        for d in base.index:
+            sel = energy[energy["business_date"] == d]
+            hour_of[d] = pd.DatetimeIndex(sel.index.floor("h").unique()).get_indexer(sel.index.floor("h"))
+        day_objs = [Day(d, pd.DatetimeIndex([]), np.empty(0), hour_of[d], np.empty((0, 7))) for d in base.index]
+        act = activation_revenue(base.attrs["reserves"], day_objs, ratio, afrr_price, energy, params)
+        if len(act) != len(base):
+            raise ValueError(f"aFRR activation data cover {len(act)} of {len(base)} days")
+        new = base.copy()
+        new["afrr_energy"] = act.set_index("business_date")["margin"].reindex(new.index).to_numpy()
+        new.attrs = dict(base.attrs)
+        out[f"stack_act_{mode}"] = new
     return out
 
 
@@ -109,7 +150,7 @@ def compare(site: Site, runs: dict[str, pd.DataFrame], availability: float | Non
         r.update(id=name, information=INFORMATION[name], market_risk="owner")
         r["cycles_per_day"] = float(d["discharged_mwh"].sum() / days / usable)
         rows.append(r)
-    ceilings = {"da_asof": "da_perfect", "stack_asof": "stack_perfect"}
+    ceilings = {"da_asof": "da_perfect", "stack_asof": "stack_perfect", "stack_act_asof": "stack_act_perfect"}
     index = pd.Index(margins["da_asof"].index)
     if site.toll:
         toll = pd.Series([site.toll["pln_per_mw_year"] * mw / 12.0 * a] * len(index), index=index)
@@ -130,6 +171,8 @@ def compare(site: Site, runs: dict[str, pd.DataFrame], availability: float | Non
     out["short"] = [SHORT.get(i, f"DA + capacity market, {i[3:]} terms") for i in out.index]
     out["share_of_ceiling"] = np.nan
     for k, c in ceilings.items():
+        if k not in out.index:
+            continue
         out.loc[k, "share_of_ceiling"] = out.loc[k, "total_pln"] / out.loc[c, "total_pln"]
     out.attrs.update(availability=a, days=days, capacity_market=terms, first_day=str(runs["da_asof"].index.min()),
                      last_day=str(runs["da_asof"].index.max()))

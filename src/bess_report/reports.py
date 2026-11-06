@@ -189,6 +189,46 @@ def financial_report(sim: dict, site, out_dir: Path, tag: str = "example") -> di
             "bridge": bridge}
 
 
+def nem_trading_report(res: dict, name: str, out_dir: Path, tag: str = "nem") -> dict:
+    """HTML and Excel report of ``nem_trading.run``: monthly energy margin against the two benchmarks and the bridge
+    from the perfect-foresight margin to the actual one. Amounts in AUD."""
+    s, monthly, bridge = res["summary"], res["monthly"], res["bridge"].frame()
+    figs = {"bridge": lambda: F.bridge_chart(bridge, unit_label="thousand AUD", title="Perfect foresight to actual energy margin"),
+            "monthly": lambda: F.trading_chart(monthly)}
+    images = save_figures(figs, out_dir, f"trading-{tag}")
+    head = tiles([("Actual energy margin", fmt(s["actual_per_mw_year"], "pln") + " AUD", "per MW and year, metered power x price"),
+                  ("Against as-of benchmark", fmt(s["capture_vs_asof"], "pct"), "same battery, 7-day average forecast"),
+                  ("Against perfect foresight", fmt(s["capture_vs_perfect"], "pct"), "ceiling no one can trade"),
+                  ("Days compared", fmt(s["days"], "int"), f"{s['first_day']} to {s['last_day']}")])
+    show = monthly[["days", "export", "import", "actual", "asof", "perfect", "capture_vs_asof", "capture_vs_perfect"]]
+    sections = [
+        note("Energy market only: the metered power times the regional reference price of every 5-minute interval. Frequency "
+             "control (FCAS) revenue, which is usually the larger part for a grid battery, is not in this view, and neither "
+             "are contracts. The gap to the as-of benchmark is everything the energy benchmark does not know, not a verdict on "
+             "the operator."),
+        section("Perfect foresight to actual", img(f"img/{images['bridge'].name}", "bridge") + table_html(
+            bridge.set_index("label").rename_axis("Step").rename(columns={"value_pln": "value"}), {"value": "pln"},
+            headers={"value": "AUD", "kind": "Type"})),
+        section("By month", img(f"img/{images['monthly'].name}", "monthly energy margin") + table_html(
+            show.rename_axis("Month"), {"days": "int", "export": "pln", "import": "pln", "actual": "pln", "asof": "pln",
+                                        "perfect": "pln", "capture_vs_asof": "pct", "capture_vs_perfect": "pct"},
+            headers={"export": "Export revenue, AUD", "import": "Import cost, AUD", "actual": "Actual margin, AUD",
+                     "asof": "As-of, AUD", "perfect": "Perfect, AUD", "capture_vs_asof": "vs as-of",
+                     "capture_vs_perfect": "vs perfect"})),
+        note(f"Benchmark battery: {fmt(s['power_mw'], 'int')} MW / {fmt(s['energy_mwh'], 'int')} MWh, round-trip efficiency "
+             f"{fmt(s['rte'], 'pct')} (measured, from the technical report), arbitrage only, no degradation cost, at most "
+             "one and a half cycles a day. Only complete days with seven earlier days are compared."),
+    ]
+    html = page(f"Trading report: {name}", "Open AEMO data: SCADA and regional reference prices", sections, footer=FOOTER,
+                current=f"trading-{tag}.html", head_tiles=head)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / f"trading-{tag}.html").write_text(html, encoding="utf-8", newline=chr(10))
+    xlsx = write_excel(out_dir / f"trading-{tag}.xlsx", {"Monthly": monthly, "Bridge": bridge, "Daily": res["daily"]},
+                       {"Monthly": {c: "#,##0" for c in ("export", "import", "actual", "asof", "perfect")}},
+                       notes=["Energy only (no FCAS), AUD."])
+    return {"html": out_dir / f"trading-{tag}.html", "xlsx": xlsx, "images": images}
+
+
 def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: Path, tag: str = "example",
                     saturation: pd.DataFrame | None = None, sensitivity: pd.DataFrame | None = None) -> dict:
     figs = {"strategies": lambda: F.strategy_chart(table), "monthly": lambda: F.strategy_monthly_chart(

@@ -61,7 +61,7 @@ footer{color:var(--mut);font-size:.85rem;margin-top:2.5em;border-top:1px solid v
 SITE_NAME = "bess-reporting-kit"
 GITHUB = "https://github.com/kwwaleszczynski-del/bess-reporting-kit"
 NAV_ITEMS = [("Technical, NEM", "technical-nem.html"), ("Technical, EMS", "technical-ems.html"),
-             ("Financial", "financial-example.html"), ("Strategies", "strategies-example.html")]
+             ("Financial", "financial-example.html"), ("Trading, NEM", "trading-nem.html"), ("Strategies", "strategies-example.html")]
 
 
 def esc(s) -> str:

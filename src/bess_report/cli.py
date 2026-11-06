@@ -175,6 +175,8 @@ def main(argv=None) -> int:
         from bess_report import data
         prices, capacity = data.fetch(date.fromisoformat(a.start), date.fromisoformat(a.end), a.cache)
         data.save_slice(prices, capacity, a.out)
+        data.save_activation(data.fetch_activation(date.fromisoformat(a.start), date.fromisoformat(a.end),
+                                                   a.cache), a.out)
     elif a.cmd == "prepare-nem":
         if a.nem_data_dir is None or a.nem_extra_dir is None:
             p.error("--nem-data-dir and --nem-extra-dir (or BESS_NEM_DATA_DIR, BESS_NEM_EXTRA_DIR) are required")

@@ -49,6 +49,10 @@ def build(root: Path) -> Path:
         card("Technical report, EMS table",
              f"The same layout on an EMS export (synthetic battery with known truth): {te['violations']} warranty "
              "violations found, auxiliary load, LTSA availability.", "technical-ems", "technical-ems_rte"),
+        card("Trading report, NEM battery",
+             f"Metered energy margin against perfect-foresight and as-of benchmarks on the same prices: "
+             f"{s['nem_trading']['capture_vs_asof'] * 100:.0f} % of the as-of benchmark. Energy only, AUD.",
+             "trading-nem", "trading-nem_monthly"),
         card("Financial report",
              "Revenue by source, costs, margin, budget variance and a budget-to-actual bridge. A simulation on public "
              "prices, not a real plant.", "financial-example", "financial-example_bridge"),
