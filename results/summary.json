@@ -29,6 +29,8 @@
     "valid_days": 340,
     "withheld_share": 0.29333875207953247,
     "stored_jumps_per_month": 3.8333333333333335,
+    "usable_window_mwh": 438.79998779296875,
+    "efc_per_year_usable": 307.60652225971995,
     "soh_temp_c": 25.0,
     "soh_year1": 0.9610679211038049,
     "soh_year10": 0.8249931516207069,
@@ -85,34 +87,54 @@
     "soh_year10": 0.8322378455606559
   },
   "nem_trading": {
+    "interval_min": 5,
     "days": 357,
     "first_day": "2025-10-08",
     "last_day": "2026-09-29",
     "rte": 0.8291542985846555,
     "power_mw": 200.0,
-    "energy_mwh": 400.0,
+    "registered_mwh": 400.0,
+    "usable_window_mwh": 438.79998779296875,
+    "max_cycles_per_day": 1.7887496655495319,
     "actual": 9978422.014191162,
-    "asof": 8171769.705560185,
-    "perfect": 17169809.468775947,
+    "asof": 10042873.103098191,
+    "perfect": 20500044.791785717,
     "export": 13192128.471717544,
     "import": 3213706.4575263835,
-    "capture_vs_asof": 1.221084584334493,
-    "capture_vs_perfect": 0.581160905270228,
+    "capture_vs_asof": 0.9935824053290939,
+    "capture_vs_perfect": 0.48675122984070135,
     "actual_per_mw_year": 51010.14054873633,
-    "asof_per_mw_year": 41774.452976603185,
-    "perfect_per_mw_year": 87772.83551965296,
+    "asof_per_mw_year": 51339.61740379328,
+    "perfect_per_mw_year": 104797.14774512307,
     "bridge": {
       "step0": {
         "label": "Forecast: as-of vs perfect",
-        "value": -8998039.763215762
+        "value": -10457171.688687526
       },
       "step1": {
         "label": "Operation vs as-of benchmark",
-        "value": 1806652.3086309768
+        "value": -64451.08890702948
       }
     },
-    "start": 17169809.468775947,
+    "start": 20500044.791785717,
     "end": 9978422.014191162
+  },
+  "stack_profile": {
+    "mean_up_mw": 0.9896002740699044,
+    "mean_down_mw": 0.9961529614529819,
+    "share_hours_up_above_power": 0.045662100456621,
+    "max_up_mw": 1.4010695187165776,
+    "arbitrage_cycles_per_day": 0.0925459676811985,
+    "arbitrage_mwh_per_year": 60.80270076654741
+  },
+  "afrr_activation": {
+    "days": 365,
+    "reserve_mwh": 0.8999999999999999,
+    "up_mwh_per_year": 546.0504498383283,
+    "down_mwh_per_year": 733.706653659634,
+    "arbitrage_mwh_per_year": 60.80270076654741,
+    "days_net_above_reserve": 241,
+    "max_daily_net_mwh": 7.514282015269075
   },
   "strategies": {
     "da_perfect": {
@@ -175,21 +197,6 @@
       "short": "Stack, as-of",
       "share_of_ceiling": 0.9122595416575238
     },
-    "stack_act_perfect": {
-      "total_pln": 3340949.3926964393,
-      "pln_per_mw_year": 3340949.3926964393,
-      "month_mean_pln_per_mw": 278412.44939136994,
-      "month_std_pln_per_mw": 92353.42640476055,
-      "month_worst_pln_per_mw": 121159.29908496297,
-      "month_best_pln_per_mw": 458026.7311569712,
-      "months_below_half_of_mean": 1,
-      "discharged_mwh_per_year": 151.2308754332343,
-      "information": "prices of the delivery day, all products, aFRR activation ex post (ceiling)",
-      "market_risk": "owner",
-      "cycles_per_day": 0.23018398087250275,
-      "short": "Stack + aFRR energy, perfect foresight",
-      "share_of_ceiling": null
-    },
     "stack_act_asof": {
       "total_pln": 3088617.677147988,
       "pln_per_mw_year": 3088617.677147988,
@@ -199,11 +206,11 @@
       "month_best_pln_per_mw": 438059.0413028046,
       "months_below_half_of_mean": 1,
       "discharged_mwh_per_year": 60.80270076654741,
-      "information": "as the stack, activation priced ex post with pro-rata activation",
+      "information": "as the stack; activation priced ex post, state of charge and cycles not enforced",
       "market_risk": "owner",
       "cycles_per_day": 0.0925459676811985,
-      "short": "Stack + aFRR energy, as-of",
-      "share_of_ceiling": 0.9244730506543838
+      "short": "Stack + aFRR energy, as-of (upper bound)",
+      "share_of_ceiling": null
     },
     "toll": {
       "total_pln": 291000.0,
@@ -304,47 +311,58 @@
   "saturation": {
     "rows": {
       "0": {
-        "perfect_pln_per_mw_year": 3246126.3148539215,
-        "retention": 1.0,
-        "stack_asof_scaled_pln_per_mw_year": 2872470.413026533,
-        "da_asof_pln_per_mw_year": 321346.2966295621,
-        "reserve_share": 0.9882922426641175
+        "perfect_settled_pln_per_mw_year": 3148742.525408304,
+        "perfect_best_response_pln_per_mw_year": 3148742.525408304,
+        "retention_settled": 1.0,
+        "retention_best_response": 1.0,
+        "stack_asof_settled_pln_per_mw_year": 2872470.413026533,
+        "stack_asof_best_response_pln_per_mw_year": 2872470.413026533,
+        "da_asof_pln_per_mw_year": 321346.2966295621
       },
       "250": {
-        "perfect_pln_per_mw_year": 1989199.8872706757,
-        "retention": 0.6127918923451355,
-        "stack_asof_scaled_pln_per_mw_year": 1760226.5801039422,
+        "perfect_settled_pln_per_mw_year": 1291953.6565519406,
+        "perfect_best_response_pln_per_mw_year": 1934102.3038277559,
+        "retention_settled": 0.41030781212713174,
+        "retention_best_response": 0.6142459372974476,
+        "stack_asof_settled_pln_per_mw_year": 1178597.0505688353,
+        "stack_asof_best_response_pln_per_mw_year": 1764403.2812086693,
         "da_asof_pln_per_mw_year": 321346.2966295621,
-        "reserve_share": 0.9643241718247231,
-        "last_schedule_change_mw": 0.23160256491182923
+        "last_schedule_change_mw": 0.2326874028991901
       },
       "500": {
-        "perfect_pln_per_mw_year": 1524374.9208984207,
-        "retention": 0.4695981527037462,
-        "stack_asof_scaled_pln_per_mw_year": 1348906.7996534267,
+        "perfect_settled_pln_per_mw_year": 642877.5420412801,
+        "perfect_best_response_pln_per_mw_year": 1481973.257806361,
+        "retention_settled": 0.20416961274339726,
+        "retention_best_response": 0.4706555857926778,
+        "stack_asof_settled_pln_per_mw_year": 586471.1718444936,
+        "stack_asof_best_response_pln_per_mw_year": 1351944.244915138,
         "da_asof_pln_per_mw_year": 321346.2966295621,
-        "reserve_share": 0.9184849883616323,
-        "last_schedule_change_mw": 0.2139563472130053
+        "last_schedule_change_mw": 0.21403141874031556
       },
       "1000": {
-        "perfect_pln_per_mw_year": 1052156.3448109997,
-        "retention": 0.32412674146303133,
-        "stack_asof_scaled_pln_per_mw_year": 931044.474923258,
+        "perfect_settled_pln_per_mw_year": 350344.01157364383,
+        "perfect_best_response_pln_per_mw_year": 1009685.6564302065,
+        "retention_settled": 0.1112647378267977,
+        "retention_best_response": 0.3206631371992788,
+        "stack_asof_settled_pln_per_mw_year": 319604.6674206305,
+        "stack_asof_best_response_pln_per_mw_year": 921095.3741531962,
         "da_asof_pln_per_mw_year": 321346.2966295621,
-        "reserve_share": 0.7928888221537648,
-        "last_schedule_change_mw": 0.10303167590583931
+        "last_schedule_change_mw": 0.10085469665521918
       },
       "2000": {
-        "perfect_pln_per_mw_year": 689483.7246262971,
-        "retention": 0.21240200095458223,
-        "stack_asof_scaled_pln_per_mw_year": 610118.4634096709,
+        "perfect_settled_pln_per_mw_year": 322180.3414383836,
+        "perfect_best_response_pln_per_mw_year": 668426.2416909086,
+        "retention_settled": 0.10232031956839845,
+        "retention_best_response": 0.21228355011473427,
+        "stack_asof_settled_pln_per_mw_year": 293912.0906116443,
+        "stack_asof_best_response_pln_per_mw_year": 609778.2168768095,
         "da_asof_pln_per_mw_year": 321346.2966295621,
-        "reserve_share": 0.5609259442537299,
-        "last_schedule_change_mw": 0.0327853676983768
+        "last_schedule_change_mw": 0.03045084515157491
       }
     },
-    "breakeven_fleet_mw": null,
-    "iterations": 6
+    "iterations": 8,
+    "breakeven_settled_mw": 996.7368905800082,
+    "breakeven_best_response_mw": null
   },
   "financial": {
     "bridge": {

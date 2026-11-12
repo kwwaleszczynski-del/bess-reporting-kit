@@ -46,33 +46,38 @@ A 1.0 MW / 2.0 MWh battery, 365 delivery days
 | DA arbitrage, as-of | day-ahead prices of the previous 7 days | 321 346 | 82 % | 7 072 | 45 514 |
 | Stack, perfect foresight | prices of the delivery day, all products (ceiling, not tradeable) | 3 148 743 |  | 116 244 | 441 573 |
 | Stack, as-of | day-ahead and capacity prices of the previous 7 days | 2 872 470 | 91 % | 107 716 | 417 629 |
-| Stack + aFRR energy, perfect foresight | prices of the delivery day, all products, aFRR activation ex post (ceiling) | 3 340 949 |  | 121 159 | 458 027 |
-| Stack + aFRR energy, as-of | as the stack, activation priced ex post with pro-rata activation | 3 088 618 | 92 % | 112 989 | 438 059 |
+| Stack + aFRR energy, as-of (upper bound) | as the stack; activation priced ex post, state of charge and cycles not enforced | 3 088 618 |  | 112 989 | 438 059 |
 | Tolling | contract terms | 291 000 |  | 24 250 | 24 250 |
 | DA + capacity market, 2029 terms | day-ahead prices of the previous 7 days, contract terms | 478 858 |  | 20 198 | 58 640 |
 | DA + capacity market, 2030 terms | day-ahead prices of the previous 7 days, contract terms | 381 744 |  | 12 106 | 50 547 |
 
-- **The revenue stack earned 8.9 times the day-ahead arbitrage** as-of, and
+- **What the stack is, in physical terms.** The as-of plan offers on average 0.99 MW upward and
+  1.00 MW downward in every hour of the year from a 1.0 MW battery, and arbitrages only
+  0.09 cycles a day (60.8 MWh a year): "sell all the balancing capacity, always".
+  Its share of the ceiling therefore says mostly that capacity prices persist from week to week, not that the forecast is
+  skilful, and it is the result of a price taker of one megawatt (balancing markets are small; see the fleet model below).
   94 % of the revenue of the simulated year in the financial report came from balancing capacity payments.
-  Both are for a price taker of one megawatt: balancing markets are small, so this does not scale to a fleet (see
-  [pl-bess-saturation](https://github.com/kwwaleszczynski-del/pl-bess-saturation)).
-- **Forecasting costs money, less in the stack.** With a plain seven-day average forecast the day-ahead
+- **Forecasting costs money, less in the stack.** With a plain 7-day average forecast the day-ahead
   strategy keeps 82 % of its perfect-foresight ceiling, the stack
   91 %.
-- **aFRR activation energy adds a layer on top of the capacity payments.** Priced ex post with pro-rata activation of the
+- **aFRR activation energy is shown as an upper bound, not as a strategy.** Priced ex post with pro-rata activation of the
   capacity bought (the variant of pl-bess-revenue-stack, net of buying the energy back and of the degradation allowance),
-  the as-of stack earns 7.5 % more.
+  it would add up to 7.5 %, but the plan does not know about it and neither the state of charge nor
+  the cycle limit is enforced: it asks for 546 MWh a year upward and
+  734 MWh downward, against 61 MWh of arbitrage, and on
+  241 of 365 days the net activated energy exceeds the state-of-charge
+  reserve of 0.90 MWh. It has no perfect-foresight twin, so it has no share of a ceiling.
 - **A toll is a price for removing the market risk.** The placeholder toll of 300 000 PLN/MW/year
   has no monthly spread at all (scaled by the assumed availability it pays 291 000); the as-of day-ahead strategy earned 321 346 PLN/MW/year with a worst month of
   7 072 PLN/MW. A toll below the value of the strategy it replaces is the price of the risk.
 - **The capacity market adds a fixed layer** on top of day-ahead arbitrage whose size depends on the auction and on the
-  de-rating factor of batteries; the best of the two terms in the table adds 157 512 PLN/MW/year.
+  de-rating factor of batteries; the best of the terms in the table adds 157 512 PLN/MW/year.
 
 ![strategies](docs/report/img/strategies-example_strategies.png)
 
 ### How much the forecast matters
 
-The same two as-of strategies with a shorter or longer average as the forecast (the default is the row used everywhere
+Both as-of strategies with a shorter or longer average as the forecast (the default is the row used everywhere
 else; every length is planned on the same days and compared with the same ceiling):
 
 | Average over the previous days | Day-ahead, PLN/MW/year | Share of ceiling | Stack, PLN/MW/year | Share of ceiling |
@@ -85,27 +90,35 @@ A better forecaster can replace the baseline without changing the evaluation; th
 
 ### When the market fills up
 
-The stack is a price taker's result: one megawatt among a few hundred megawatts of demand per product. Flooding the
+The stack is a price taker's result: one megawatt among the demand the system operator buys per product. Flooding the
 offer stacks PSE publishes with a fleet of identical batteries (the model of
 [pl-bess-revenue-stack](https://github.com/kwwaleszczynski-del/pl-bess-revenue-stack), run on the same
-365 days, perfect foresight, pro-rata acceptance) shows how much of the lone battery's margin is kept. The as-of
+365 days, perfect foresight, pro-rata acceptance) shows how much of the lone battery's margin is kept. The
+iteration of prices and schedules is a damped best response, not a fixed point, so there is a lower and an upper bound: the revenue as
+the model reports it (the best response to the prices the damped average implies, an upper bound) and the same last
+schedule settled on the market its own offers create (a lower bound, since the batteries are identical). The as-of
 stack is scaled by the share kept, which assumes the as-of plan loses the same share; day-ahead prices are not moved.
 
-| Fleet, MW | Perfect foresight, PLN/MW/year | Kept of the lone battery | Stack as-of, scaled | Day-ahead as-of |
-|---:|---:|---:|---:|---:|
-| 0 | 3 246 126 | 100 % | 2 872 470 | 321 346 |
-| 250 | 1 989 200 | 61 % | 1 760 227 | 321 346 |
-| 500 | 1 524 375 | 47 % | 1 348 907 | 321 346 |
-| 1 000 | 1 052 156 | 32 % | 931 044 | 321 346 |
-| 2 000 | 689 484 | 21 % | 610 118 | 321 346 |
+| Fleet, MW | Perfect foresight, settled | Perfect foresight, best response | Kept of the lone battery | Stack as-of, settled | Stack as-of, best response | Day-ahead as-of |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 3 148 743 | 3 148 743 | 100 % to 100 % | 2 872 470 | 2 872 470 | 321 346 |
+| 250 | 1 291 954 | 1 934 102 | 41 % to 61 % | 1 178 597 | 1 764 403 | 321 346 |
+| 500 | 642 878 | 1 481 973 | 20 % to 47 % | 586 471 | 1 351 944 | 321 346 |
+| 1 000 | 350 344 | 1 009 686 | 11 % to 32 % | 319 605 | 921 095 | 321 346 |
+| 2 000 | 322 180 | 668 426 | 10 % to 21 % | 293 912 | 609 778 | 321 346 |
 
-- At a fleet of 500 MW a battery keeps 47 % of the lone battery's margin, at
-  2 000 MW 21 %.
-- Even then the scaled stack, 610 118 PLN/MW/year, stays above day-ahead arbitrage in this model; the comparison
-  is far less lopsided than the lone-battery table suggests, and the model is optimistic (existing offers do not move,
-  demand does not change).
-- The iteration of prices and schedules had run 6 rounds; at the largest fleet the schedules were still moving by
-  0.03 MW per hour and product on average, so that row is not fully settled.
+- At a fleet of 500 MW a battery keeps between 20 % and 47 % of the lone
+  battery's margin, at 2 000 MW between 10 % and 21 %.
+- Against day-ahead arbitrage the scaled stack falls level at a fleet of 997 MW on the lower
+  bound and at n/a MW on the upper bound ("n/a": not reached within the fleet sizes run).
+  At the largest fleet it earns between 293 912 and 609 778 PLN/MW/year,
+  against 321 346 for day-ahead arbitrage. The lone-battery table overstates what a stack is
+  worth at scale.
+- The model is optimistic in other ways too (existing offers do not move, demand does not change). After
+  8 rounds the schedules were still moving by 0.21 MW per hour and product on average at the middle
+  fleet and 0.03 MW at the largest, so no row is fully settled.
+
+![stack against fleet size](docs/report/img/strategies-example_saturation.png)
 
 ### Technical report: a battery of the Australian market on open data
 
@@ -117,7 +130,8 @@ assessed against the illustrative guarantees of the site file:
 | Availability, time-weighted (declared) | 97.5 % | 97 % | 11 of 12 months |
 | Offered availability (bids) | 68.1 % |  |  |
 | RTE, mean of months, SoC-corrected | 82.9 % | 85 % | 2 of 12 months |
-| Cycles per year (EFC) | 337.4 | 365 | 9 of 12 months |
+| Cycles per year (EFC, registered energy) | 337.4 | 365 | 9 of 12 months |
+| Cycles per year against the usable energy window | 307.6 |  |  |
 | Technical outage, hours per year | 215.9 |  |  |
 | Usable energy window trend, % per year | -0.70 |  |  |
 | Modelled state of health after one year | 96.1 % |  |  |
@@ -126,6 +140,8 @@ assessed against the illustrative guarantees of the site file:
 - Time-weighted declared availability was 97.5 %, with the lowest month at 82.7 %;
   offered availability, which also includes energy limits and capacity held back, was only
   68.1 %.
+- Cycles are counted against the registered energy; the energy window the operator reports as stored is
+  438.8 MWh, so against it the battery made 307.6 cycles a year.
 - The SoC-corrected round-trip efficiency at the SCADA point averaged 82.9 %, 2.1 percentage
   points below the illustrative guarantee. Auxiliaries behind the meter are not visible in market data, so on a
   real plant the figure including them would be lower.
@@ -148,19 +164,22 @@ The same layout takes a long EMS or SCADA table. On the synthetic battery of bes
 
 ### Trading report: what the battery earned against what it could have
 
-For the same battery, the metered power times the regional reference price of every five-minute interval gives the actual
-energy margin. Two benchmarks of the same size and efficiency run on the same prices and days: perfect foresight, and an
-as-of plan from the seven-day average. Frequency control revenue, usually the larger part for a grid battery, is not in
-this energy-only view.
+For the same battery, the metered power times the regional reference price of every 5-minute interval gives the actual
+energy margin. Benchmarks run on the same prices and days, with the optimiser of pl-bess-revenue-stack and limits taken
+from the battery's own data: its registered power, the energy window it really uses
+(438.8 MWh against 400 MWh registered), its measured round-trip efficiency and a daily throughput
+limit of 1.79 cycles, the most it ever made, so every day it operated is feasible for the benchmark and
+perfect foresight is a true ceiling. One benchmark knows the prices of the day; the other plans from the
+7-day average. Frequency control revenue and contracts are not in this energy-only view.
 
 | Step | AUD |
 |---|---:|
-| Perfect foresight (ceiling) | 17 169 809 |
-| Forecast: as-of vs perfect | -8 998 040 |
-| Operation vs as-of benchmark | +1 806 652 |
+| Perfect foresight (ceiling) | 20 500 045 |
+| Forecast: as-of vs perfect | -10 457 172 |
+| Operation vs as-of benchmark | -64 451 |
 | Actual energy margin | 9 978 422 |
 
-- The battery's energy margin was 122 % of the as-of benchmark and 58 % of the
+- The battery's energy margin was 99 % of the as-of benchmark and 49 % of the
   perfect-foresight ceiling, 51 010 AUD per MW and year, over 357 complete days.
 - The as-of step shows the cost of forecasting on this market; the last step is what the energy benchmark does not know
   (frequency control, availability, the operator's own forecast), not a verdict on the operator.
@@ -233,7 +252,7 @@ table = scenario.compare(site, runs)
 ## Input schema
 
 One YAML file for the site (`config/site.example.yaml`: battery, period, guarantees, fixed costs, toll, capacity market
-auctions, budget availability) and two small money tables, one row per month and line:
+auctions, budget availability) and small money tables, one row per month and line:
 
 | Table | Columns | Lines |
 |---|---|---|
@@ -251,7 +270,7 @@ and the margin after fixed costs is the operating margin before depreciation and
 
 ## The as-of assumption
 
-A plan for delivery day D may use only what was published before D. The forecast of every quarter-hour energy price is the
+A plan for delivery day D may use only what was published before D. The forecast of every energy price interval is the
 mean of the same local time over the previous 7 days, the forecast of every balancing capacity price
 the mean of the same local hour and product over the same days. `strategies.plan_inputs` makes that information set explicit
 and a test checks that changing any price from day D onwards does not change the plan for D. The perfect-foresight rows are
@@ -263,8 +282,13 @@ can replace the baseline without changing the evaluation.
 - **Capacity market terms** (closing prices, de-rating factors) come from the pl-bess-revenue-stack project, which read them
   from the regulations and URE announcements; the rules change from auction to auction. To verify before any use. The
   obligation to deliver in stress periods is not modelled.
-- **Balancing capacity** is assumed accepted in full at the clearing price (price taker); activation energy is not
-  modelled; the duration requirements are the assumptions of the optimiser's documentation.
+- **Balancing capacity** is assumed accepted in full at the clearing price (price taker; see the fleet model for what a
+  fleet does to that); activation energy is only the upper bound described above; the duration requirements are the
+  assumptions of the optimiser's documentation.
+- **The fleet model** is not a fixed point and gives a lower and an upper bound, not an equilibrium; the as-of scaling assumes the as-of plan
+  loses the same share as the perfect plan.
+- **The NEM trading benchmark** takes its limits from the battery's data, but it is an energy-only arbitrage plan: what a
+  gap to it means (frequency control, availability, the operator's forecast) is not identified.
 - **The toll and every fixed cost** are placeholders of the site file, not market quotes.
 - **AEMO data** are public; the slice in `data/example/nem` holds the rows of one battery. Whether the reuse conditions of
   AEMO's copyright permission cover a redistributed slice is to be verified.
@@ -281,8 +305,8 @@ pytest
 ```
 
 The suite runs offline on the committed data: the as-of check, the bridge identity, the schema, the Excel and HTML
-output, a check that no two texts overlap in any chart, and a check that this README is exactly what the template and
-`results/summary.json` render to, with no number written by hand.
+output, a check that no texts overlap in any chart, and a check that this README is exactly what the template and
+`results/summary.json` render to, with no number written by hand, in digits or as a word.
 
 ## Related projects
 

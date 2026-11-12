@@ -58,6 +58,8 @@ def kpi_table(rep: TechnicalReport, guarantees: dict) -> pd.DataFrame:
         None if g.get("rte") is None else s["rte"] >= g["rte"])
     add("Cycles per year (EFC)", s["efc_per_year"], "num1", g.get("efc_per_year"),
         None if g.get("efc_per_year") is None else s["efc_per_year"] <= g["efc_per_year"])
+    if "efc_per_year_usable" in s:
+        add("Cycles per year against the usable energy window", s["efc_per_year_usable"], "num1")
     add("Mean state of charge", s["mean_soc"], "pct")
     if "technical_outage_hours_per_year" in s:
         add("Technical outage, hours per year", s["technical_outage_hours_per_year"], "num1")
@@ -203,9 +205,8 @@ def nem_trading_report(res: dict, name: str, out_dir: Path, tag: str = "nem") ->
     show = monthly[["days", "export", "import", "actual", "asof", "perfect", "capture_vs_asof", "capture_vs_perfect"]]
     sections = [
         note("Energy market only: the metered power times the regional reference price of every 5-minute interval. Frequency "
-             "control (FCAS) revenue, which is usually the larger part for a grid battery, is not in this view, and neither "
-             "are contracts. The gap to the as-of benchmark is everything the energy benchmark does not know, not a verdict on "
-             "the operator."),
+             "control (FCAS) revenue and contracts are not in this view. The gap to the as-of benchmark is everything the "
+             "energy benchmark does not know, not a verdict on the operator."),
         section("Perfect foresight to actual", img(f"img/{images['bridge'].name}", "bridge") + table_html(
             bridge.set_index("label").rename_axis("Step").rename(columns={"value_pln": "value"}), {"value": "pln"},
             headers={"value": "AUD", "kind": "Type"})),
@@ -215,9 +216,12 @@ def nem_trading_report(res: dict, name: str, out_dir: Path, tag: str = "nem") ->
             headers={"export": "Export revenue, AUD", "import": "Import cost, AUD", "actual": "Actual margin, AUD",
                      "asof": "As-of, AUD", "perfect": "Perfect, AUD", "capture_vs_asof": "vs as-of",
                      "capture_vs_perfect": "vs perfect"})),
-        note(f"Benchmark battery: {fmt(s['power_mw'], 'int')} MW / {fmt(s['energy_mwh'], 'int')} MWh, round-trip efficiency "
-             f"{fmt(s['rte'], 'pct')} (measured, from the technical report), arbitrage only, no degradation cost, at most "
-             "one and a half cycles a day. Only complete days with seven earlier days are compared."),
+        note(f"Benchmark battery, from the battery's own data: {fmt(s['power_mw'], 'int')} MW registered power, a usable "
+             f"energy window of {fmt(s['usable_window_mwh'], 'num1')} MWh (registered: {fmt(s['registered_mwh'], 'int')} MWh; the "
+             f"99.5th minus the 0.5th percentile of the energy the operator reports as stored), round-trip efficiency "
+             f"{fmt(s['rte'], 'pct')} (measured, from the technical report), arbitrage only, no degradation cost, and a daily "
+             f"throughput limit of {fmt(s['max_cycles_per_day'], 'num2')} cycles, the largest the battery actually made, so every day it "
+             "operated is feasible for the benchmark. Only complete days with seven earlier days are compared."),
     ]
     html = page(f"Trading report: {name}", "Open AEMO data: SCADA and regional reference prices", sections, footer=FOOTER,
                 current=f"trading-{tag}.html", head_tiles=head)
@@ -265,13 +269,22 @@ def strategy_report(table: pd.DataFrame, monthly: pd.DataFrame, site, out_dir: P
                 "pln_per_mw_year stack": "Stack, PLN/MW/year", "share_of_ceiling stack": "Stack, share of ceiling"}))]
            if sensitivity is not None else []),
         *([section("When the market fills up", img(ref(images, "saturation"), "stack against fleet size") + table_html(
-            saturation.rename_axis("Fleet, MW"), {"perfect_pln_per_mw_year": "pln", "retention": "pct",
-                                                  "stack_asof_scaled_pln_per_mw_year": "pln",
-                                                  "da_asof_pln_per_mw_year": "pln", "reserve_share": "pct"},
-            headers={"perfect_pln_per_mw_year": "Perfect foresight, PLN/MW/year", "retention": "Kept of lone battery",
-                     "stack_asof_scaled_pln_per_mw_year": "Stack as-of, scaled", "da_asof_pln_per_mw_year": "Day-ahead as-of",
-                     "reserve_share": "From reserves"})),
-           note("Fleet model of pl-bess-revenue-stack (offer stacks, pro-rata acceptance, perfect foresight); the as-of "
+            saturation.rename_axis("Fleet, MW")[["perfect_settled_pln_per_mw_year", "perfect_best_response_pln_per_mw_year",
+                                                 "retention_settled", "retention_best_response",
+                                                 "stack_asof_settled_pln_per_mw_year",
+                                                 "stack_asof_best_response_pln_per_mw_year", "da_asof_pln_per_mw_year"]],
+            {"perfect_settled_pln_per_mw_year": "pln", "perfect_best_response_pln_per_mw_year": "pln",
+             "retention_settled": "pct", "retention_best_response": "pct", "stack_asof_settled_pln_per_mw_year": "pln",
+             "stack_asof_best_response_pln_per_mw_year": "pln", "da_asof_pln_per_mw_year": "pln"},
+            headers={"perfect_settled_pln_per_mw_year": "Perfect foresight, settled",
+                     "perfect_best_response_pln_per_mw_year": "Perfect foresight, best response",
+                     "retention_settled": "Kept, settled", "retention_best_response": "Kept, best response",
+                     "stack_asof_settled_pln_per_mw_year": "Stack as-of, settled",
+                     "stack_asof_best_response_pln_per_mw_year": "Stack as-of, best response",
+                     "da_asof_pln_per_mw_year": "Day-ahead as-of"})),
+           note("Fleet model of pl-bess-revenue-stack (offer stacks, pro-rata acceptance, perfect foresight, damped "
+                "iteration). It is not a fixed point, so there are two bounds: the best response to the prices the damped "
+                "average implies (upper) and the same schedule settled on the offers actually made (lower). The as-of "
                 "stack is scaled by the share kept, which assumes the as-of plan loses the same share. Day-ahead prices "
                 "are not moved by the fleet in this model.")] if saturation is not None else []),
         note("Capacity market terms (to verify against the current regulations): " + cm_text if cm else "No capacity market terms."),

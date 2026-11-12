@@ -9,7 +9,8 @@ def synthetic(days=12, flat_battery=True):
     idx = pd.date_range("2026-01-01", periods=days * 288, freq="5min", tz="Australia/Brisbane")
     hour = (np.arange(len(idx)) % 288) / 12.0
     rrp = 50 + 60 * np.sin((hour - 6) / 24 * 2 * np.pi) + (np.arange(len(idx)) // 288) % 3 * 5
-    site = pd.DataFrame({"p_meter": np.zeros(len(idx))}, index=idx.tz_convert("UTC"))
+    site = pd.DataFrame({"p_meter": np.zeros(len(idx)), "e_stored": 10 + 10 * np.sin(np.arange(len(idx)) / 50.0)},
+                        index=idx.tz_convert("UTC"))
     return site, pd.Series(rrp, index=idx.tz_localize(None))
 
 

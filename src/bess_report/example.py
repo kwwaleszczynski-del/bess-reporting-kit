@@ -109,8 +109,11 @@ def run(root: Path, site_path: Path, workers: int = 1, nem_duid: str = NEM_DUID)
     monthly.to_csv(results / "strategy_monthly_margin_per_mw.csv")
     pd.DataFrame({k: margin(v) for k, v in runs.items()}).to_csv(results / "strategy_daily_margin.csv")
     sat = None
-    if (results / "saturation_fleet.csv").exists():                 # written by the separate `saturation` command
-        sat = pd.read_csv(results / "saturation_fleet.csv", index_col="fleet_mw")
+    if (results / "saturation_raw.csv").exists():                   # written by the separate `saturation` command
+        from bess_report import saturation
+        raw = pd.read_csv(results / "saturation_raw.csv", index_col="fleet_mw")
+        sat = saturation.fleet_table(raw, table, table.attrs["availability"])
+        sat.to_csv(results / "saturation_fleet.csv")
     paths["strategies"] = reports.strategy_report(table, monthly.dropna(axis=1, how="all"), site, docs / "report",
                                                   saturation=sat, sensitivity=sens)
 
@@ -126,6 +129,8 @@ def run(root: Path, site_path: Path, workers: int = 1, nem_duid: str = NEM_DUID)
     mix = revenue_mix(sim["statement"])
     mix.to_csv(results / "financial_revenue_mix.csv")
 
+    out["stack_profile"] = scenario.stack_profile(site, runs["stack_asof"])
+    out["afrr_activation"] = scenario.activation_diagnostics(site, runs["stack_act_asof"])
     out["strategies"] = {i: {k: v for k, v in r.items() if k != "label"} for i, r in table.to_dict("index").items()}
     out["forecast_sensitivity"] = {f"{r.strategy}_{r.lookback_days}": {"pln_per_mw_year": r.pln_per_mw_year,
                                                                        "share_of_ceiling": r.share_of_ceiling}
@@ -140,8 +145,10 @@ def run(root: Path, site_path: Path, workers: int = 1, nem_duid: str = NEM_DUID)
         for k in rows:
             if int(k) in last.index:
                 rows[k]["last_schedule_change_mw"] = float(last.loc[int(k), "mean_abs_change_mw"])
-        out["saturation"] = {"rows": rows, "breakeven_fleet_mw": breakeven_fleet_mw(sat),
-                             "iterations": int(conv["iteration"].max())}
+        out["saturation"] = {
+            "rows": rows, "iterations": int(conv["iteration"].max()),
+            "breakeven_settled_mw": breakeven_fleet_mw(sat, "stack_asof_settled_pln_per_mw_year"),
+            "breakeven_best_response_mw": breakeven_fleet_mw(sat, "stack_asof_best_response_pln_per_mw_year")}
     out["financial"] = {
         "bridge": {"start": sim["bridge"].start, "end": sim["bridge"].end,
                    "steps": {f"step{i}": {"label": k, "value": v} for i, (k, v) in enumerate(sim["bridge"].steps)}},

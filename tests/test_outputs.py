@@ -159,5 +159,27 @@ def test_forecast_sensitivity_default_row_is_the_main_result(summary):
 
 def test_activation_variant_in_the_results(summary):
     st = summary["strategies"]
-    assert st["stack_act_asof"]["pln_per_mw_year"] > st["stack_asof"]["pln_per_mw_year"]      # the README says "more"
-    assert 0 < st["stack_act_asof"]["share_of_ceiling"] <= 1.0001
+    assert st["stack_act_asof"]["pln_per_mw_year"] > st["stack_asof"]["pln_per_mw_year"]      
+    assert st["stack_act_asof"]["share_of_ceiling"] is None and "stack_act_perfect" not in st      # no ceiling for an upper bound
+
+
+def test_claims_the_pages_make_about_the_stack_and_the_trading_report(summary):
+    p, b = summary["stack_profile"], summary["assumptions"]["battery"]["power_mw"]
+    assert p["mean_up_mw"] >= 0.9 * b and p["mean_down_mw"] >= 0.9 * b      # "offers nearly all capacity every hour"
+    assert summary["afrr_activation"]["days_net_above_reserve"] > 0         # "could not have been delivered" on some days
+    t = summary["nem_trading"]
+    assert t["perfect"] >= t["asof"] and t["max_cycles_per_day"] >= 1.0
+    for name in ("README.md", "docs/index.html", "docs/report/trading-nem.html"):
+        text = (ROOT / name).read_text(encoding="utf-8")
+        assert "larger part" not in text and "8.9 times" not in text, name
+
+
+def test_lint_catches_numbers_written_as_words():
+    for line in ("a seven-day average", "a few hundred megawatts", "twice the margin", "half of the days", "No one knows."):
+        found = readme.lint(line)
+        assert bool(found) == (line != "No one knows."), line
+
+
+def test_trading_benchmark_is_a_ceiling_every_month():
+    m = pd.read_csv(RES / "nem_trading_monthly.csv", index_col="month")
+    assert (m["perfect"] >= m["actual"] - 1e-6).all() and (m["perfect"] >= m["asof"] - 1e-6).all()

@@ -34,7 +34,8 @@ def build(root: Path) -> Path:
     cap = f"{d['capacity_lines_share'] * 100:.0f} %"
     head = tiles([
         ("Revenue stack, as-of", fmt(st["stack_asof"]["share_of_ceiling"], "pct"),
-         f"of its perfect-foresight ceiling; simulation, price taker of 1 MW, {cap} of revenue from balancing capacity"),
+         f"of its perfect-foresight ceiling. The plan offers nearly all capacity every hour, so this mostly says that "
+         f"capacity prices persist; simulation, price taker of 1 MW, {cap} of revenue from balancing capacity"),
         ("Day-ahead arbitrage, as-of", fmt(st["da_asof"]["share_of_ceiling"], "pct"),
          "of its ceiling, with a plain seven-day average forecast"),
         ("Declared availability", fmt(tn["availability"], "pct"),
@@ -64,8 +65,8 @@ def build(root: Path) -> Path:
     fig = lambda name, alt: f'<div class="fig">{_picture(name, alt)}</div>'   # noqa: E731
     sat = ""
     if "sat_large_mw" in d:
-        sat = (f" In a fleet model, at {d['sat_large_mw']:,} MW of identical batteries a battery keeps "
-               f"{d['sat_large_retention'] * 100:.0f} % of the lone battery's margin.").replace(",", " ")
+        sat = (f" In a fleet model, at {d['sat_large_mw']:,} MW of identical batteries a battery keeps between "
+               f"{d['sat_large_settled'] * 100:.0f} % and {d['sat_large_best'] * 100:.0f} % of the lone battery's margin.").replace(",", " ")
     body = [
         note("Working material, not an official statement and not investment advice. The money figures are a simulation "
              "on public prices for a price taker of 1 MW; balancing markets are small, so they do not scale to a fleet. "

@@ -79,7 +79,7 @@ def main(argv=None) -> int:
     sa.add_argument("--data", type=Path, default=Path("data/example"))
     sa.add_argument("--stack-data-dir", type=Path, default=_env_path("BESS_STACK_DATA_DIR"))
     sa.add_argument("--results", type=Path, default=Path("results"))
-    sa.add_argument("--iterations", type=int, default=6)
+    sa.add_argument("--iterations", type=int, default=8)
     sa.add_argument("--workers", type=int, default=1)
 
     d = sub.add_parser("fetch-pse", help="download PSE prices into the example slice")
@@ -160,7 +160,6 @@ def main(argv=None) -> int:
     elif a.cmd == "saturation":
         if a.stack_data_dir is None:
             p.error("--stack-data-dir (or BESS_STACK_DATA_DIR) is required")
-        import pandas as pd
         from bess_report import data, saturation
         from bess_report.schema import load_site
         from bess_report.strategies import build_days
@@ -168,8 +167,7 @@ def main(argv=None) -> int:
         prices, capacity = data.load_slice(a.data)
         summary = saturation.run_fleet(site, build_days(prices, capacity), a.stack_data_dir,
                                        iterations=a.iterations, workers=a.workers)
-        strategies = pd.read_csv(a.results / "strategy_comparison.csv", index_col="id")
-        saturation.fleet_table(summary, strategies).to_csv(a.results / "saturation_fleet.csv")
+        summary.to_csv(a.results / "saturation_raw.csv")
         summary.attrs["convergence"].to_csv(a.results / "saturation_convergence.csv", index=False)
     elif a.cmd == "fetch-pse":
         from bess_report import data

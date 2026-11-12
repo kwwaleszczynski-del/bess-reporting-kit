@@ -137,7 +137,14 @@ def from_nem(cache, duid: str, guarantees: dict | None = None, cell_temp_c: floa
                     "withheld_share": float(m["withheld_share"].mean()) if "withheld_share" in m else float("nan"),
                     "stored_jumps_per_month": float(s["jumps_per_month"])})
     soh = None
-    notes = ["Market data: RTE is at the SCADA point (auxiliaries behind the meter are invisible), availability is "
+    stored = unit_site(cache, duid)["e_stored"].dropna()
+    window = float(stored.quantile(0.995) - stored.quantile(0.005))
+    summary["usable_window_mwh"] = window
+    summary["efc_per_year_usable"] = summary["efc_per_year"] * summary["mwh"] / window
+    notes = [f"Cycles (EFC) are counted against the registered energy; the energy window the operator reports as stored is "
+             f"{window:.1f} MWh against {summary['mwh']:.0f} MWh registered, so the cycles per year against the window are "
+             f"{summary['efc_per_year_usable']:.1f}.",
+             "Market data: RTE is at the SCADA point (auxiliaries behind the meter are invisible), availability is "
              "the physical availability the operator declared with its bids (PASA), not a measurement.",
              "Usable energy follows the BMS window, so a falling capacity does not show in it directly; the ageing "
              "model projection is a model, not a measurement."]

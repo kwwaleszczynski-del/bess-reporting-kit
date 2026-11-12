@@ -65,11 +65,13 @@ def test_activation_variant_adds_the_net_activation_margin(days, short_site, run
     prices, _ = data.load_slice(Path(__file__).resolve().parents[1] / "data/example")
     act = data.load_activation(Path(__file__).resolve().parents[1] / "data/example")
     out = SC.with_activation(short_site, runs, prices, act)
-    assert {"stack_act_perfect", "stack_act_asof"} <= set(out)
-    for mode in ("perfect", "asof"):
-        base, var = out[f"stack_{mode}"], out[f"stack_act_{mode}"]
-        assert var["afrr_energy"].notna().all() and len(var) == len(base)
-        assert (margin(var) - margin(base)).to_numpy() == pytest.approx(var["afrr_energy"].to_numpy())
+    assert "stack_act_asof" in out and "stack_act_perfect" not in out        # no ceiling for an upper bound
+    base, var = out["stack_asof"], out["stack_act_asof"]
+    assert var["afrr_energy"].notna().all() and len(var) == len(base)
+    assert (margin(var) - margin(base)).to_numpy() == pytest.approx(var["afrr_energy"].to_numpy())
+    d = SC.activation_diagnostics(short_site, var)
+    assert d["days"] == len(var) and d["reserve_mwh"] == pytest.approx(0.9)
+    assert 0 <= d["days_net_above_reserve"] <= d["days"]
     assert "afrr_energy" not in runs["stack_asof"]            # the original runs are not changed
     t = SC.compare(short_site, out)
-    assert 0 < t.loc["stack_act_asof", "share_of_ceiling"] < 2
+    assert pd.isna(t.loc["stack_act_asof", "share_of_ceiling"])

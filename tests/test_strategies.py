@@ -71,3 +71,33 @@ def test_as_of_for_every_lookback(days, lookback):
     after = S.plan_inputs(days[:i] + future, i, lookback)
     assert np.array_equal(before[0], after[0]) and np.array_equal(before[1], after[1], equal_nan=True)
     assert S.plan_inputs(days, lookback - 1, lookback) is None and S.plan_inputs(days, lookback, lookback) is not None
+
+
+def test_run_strategy_end_to_end_does_not_see_the_delivery_day(days):
+    """The whole path (forecast, optimiser, settlement): scaling the prices of day D, and every later price, by a factor
+    changes what the plan earns by exactly that factor and nothing about the plan itself."""
+    i = 200
+    day = days[i]
+    b = S.Battery()
+    base = S.run_strategy(days, "stack", "asof", b, day.business_date, day.business_date)
+    k = 3.0
+    scaled = [replace(d, prices=d.prices * k, reserve_prices=d.reserve_prices * k) if j >= i else d
+              for j, d in enumerate(days)]
+    alt = S.run_strategy(scaled, "stack", "asof", b, day.business_date, day.business_date)
+    for col in ("discharged_mwh", "charged_mwh", "reserved_mw_hours"):         # the plan: unchanged
+        assert alt[col].iloc[0] == pytest.approx(base[col].iloc[0], rel=1e-9), col
+    for col in ("da_sales", "da_purchases", "fcr_capacity", "afrr_capacity", "mfrrd_capacity", "rr_capacity"):
+        assert alt[col].iloc[0] == pytest.approx(k * base[col].iloc[0], rel=1e-9), col      # the settlement: scaled
+
+
+def test_recomputation_reproduces_the_committed_daily_margins(days, site):
+    import pandas as pd
+    from pathlib import Path
+    ref = pd.read_csv(Path(__file__).resolve().parents[1] / "results/strategy_daily_margin.csv", index_col=0)
+    ref.index = pd.to_datetime(ref.index).date
+    d0 = date(2026, 3, 1)
+    got = S.run_strategy(days, "stack", "asof", site.battery, d0, date(2026, 3, 3))
+    a = site.guarantees["availability"]
+    for d, m in S.margin(got).items():
+        assert m == pytest.approx(ref.loc[d, "stack_asof"], rel=1e-6)
+    assert len(got) == 3

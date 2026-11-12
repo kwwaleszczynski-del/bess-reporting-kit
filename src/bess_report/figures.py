@@ -230,11 +230,15 @@ def strategy_chart(table: pd.DataFrame) -> Figure:
 
 
 def saturation_chart(table: pd.DataFrame) -> Figure:
-    """Scaled as-of stack margin against fleet size, with the unchanged day-ahead as-of margin."""
-    fig, ax = plt.subplots(figsize=(WIDTH, 4.4))
+    """The as-of stack margin against fleet size as a band between the two bounds of the fleet model, with the
+    unchanged day-ahead as-of margin."""
+    fig, ax = plt.subplots(figsize=(WIDTH, 4.6))
     x = np.arange(len(table))
-    ax.plot(x, table["stack_asof_scaled_pln_per_mw_year"] / 1e3, marker="o", color=C["blue"],
-            label="Stack, as-of, scaled by the fleet model")
+    lo = table["stack_asof_settled_pln_per_mw_year"] / 1e3
+    hi = table["stack_asof_best_response_pln_per_mw_year"] / 1e3
+    ax.fill_between(x, lo, hi, color=C["blue"], alpha=0.2, label="Between the two bounds")
+    ax.plot(x, hi, marker="o", color=C["blue"], label="Upper: best response to damped prices")
+    ax.plot(x, lo, marker="v", color=C["purple"], label="Lower: settled on the offers made")
     ax.plot(x, table["da_asof_pln_per_mw_year"] / 1e3, marker="s", color=C["orange"], ls="--",
             label="Day-ahead arbitrage, as-of")
     ax.set_xticks(x, [f"{int(m):,}".replace(",", " ") for m in table.index])

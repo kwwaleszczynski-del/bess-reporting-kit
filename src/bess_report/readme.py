@@ -6,8 +6,8 @@ Placeholders in the template:
                                 num1, num2, int, text
     {{table:name}}              a Markdown table built from the summary (strategies, bridge, mix, nem, ems)
 
-``lint`` rejects a template that contains a number written by hand outside code, links and placeholders, so a figure
-cannot drift away from the results. The test suite checks that README.md equals the rendering of the template.
+``lint`` rejects a template that contains a number written by hand, in digits or as a word (two, seven, hundred,
+half, twice...), outside code, links and placeholders, so a figure cannot drift away from the results. The test suite checks that README.md equals the rendering of the template.
 
 Usage:
     python -m bess_report readme            # write README.md
@@ -21,6 +21,10 @@ from pathlib import Path
 
 PLACEHOLDER = re.compile(r"\{\{\s*([^{}|]+?)\s*(?:\|\s*(\w+)\s*)?\}\}")
 DIGIT = re.compile(r"\d")
+# numbers written as words: a figure must come from the results, not from the prose ("one" is left alone: "one
+# battery", "no one" are not figures)
+NUMBER_WORD = re.compile(r"\b(two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|"
+                         r"hundreds?|thousands?|millions?|half|halves|twice|double|triple|dozens?|quarter|third)\b", re.I)
 
 
 def fmt(v, kind: str) -> str:
@@ -71,10 +75,15 @@ def derive(s: dict) -> dict:
     if sat:
         sizes = sorted(int(k) for k in sat["rows"] if int(k) > 0)
         mid, large = sizes[1], sizes[-1]
-        d.update({"sat_mid_mw": mid, "sat_mid_retention": sat["rows"][str(mid)]["retention"],
-                  "sat_large_mw": large, "sat_large_retention": sat["rows"][str(large)]["retention"],
-                  "sat_large_stack": sat["rows"][str(large)]["stack_asof_scaled_pln_per_mw_year"],
-                  "sat_large_change": sat["rows"][str(large)]["last_schedule_change_mw"]})
+        r = sat["rows"]
+        d.update({"sat_mid_mw": mid, "sat_large_mw": large,
+                  "sat_mid_settled": r[str(mid)]["retention_settled"], "sat_mid_best": r[str(mid)]["retention_best_response"],
+                  "sat_large_settled": r[str(large)]["retention_settled"],
+                  "sat_large_best": r[str(large)]["retention_best_response"],
+                  "sat_large_stack_settled": r[str(large)]["stack_asof_settled_pln_per_mw_year"],
+                  "sat_large_stack_best": r[str(large)]["stack_asof_best_response_pln_per_mw_year"],
+                  "sat_large_change": r[str(large)]["last_schedule_change_mw"],
+                  "sat_mid_change": r[str(mid)]["last_schedule_change_mw"]})
     return d
 
 
@@ -95,7 +104,7 @@ def _md(header: list[str], rows: list[list[str]], align: str | None = None) -> s
 def table(name: str, s: dict) -> str:
     st = s["strategies"]
     if name == "strategies":
-        order = ["da_perfect", "da_asof", "stack_perfect", "stack_asof", "stack_act_perfect", "stack_act_asof", "toll"] + sorted(k for k in st if k.startswith("cm_"))
+        order = ["da_perfect", "da_asof", "stack_perfect", "stack_asof", "stack_act_asof", "toll"] + sorted(k for k in st if k.startswith("cm_"))
         rows = [[st[k]["short"], st[k]["information"], fmt(st[k]["pln_per_mw_year"], "pln"),
                  fmt(st[k]["share_of_ceiling"], "pct0") if st[k].get("share_of_ceiling") is not None else "",
                  fmt(st[k]["month_worst_pln_per_mw"], "pln"), fmt(st[k]["month_best_pln_per_mw"], "pln")]
@@ -103,11 +112,14 @@ def table(name: str, s: dict) -> str:
         return _md(["Strategy", "Plan for day D may use", "PLN/MW/year", "Share of own ceiling", "Worst month, PLN/MW",
                     "Best month, PLN/MW"], rows, "---|---|---:|---:|---:|---:")
     if name == "saturation":
-        rows = [[fmt(float(k), "int"), fmt(v["perfect_pln_per_mw_year"], "pln"), fmt(v["retention"], "pct0"),
-                 fmt(v["stack_asof_scaled_pln_per_mw_year"], "pln"), fmt(v["da_asof_pln_per_mw_year"], "pln")]
-                for k, v in s["saturation"]["rows"].items()]
-        return _md(["Fleet, MW", "Perfect foresight, PLN/MW/year", "Kept of the lone battery", "Stack as-of, scaled",
-                    "Day-ahead as-of"], rows, "---:|---:|---:|---:|---:")
+        rows = [[fmt(float(k), "int"), fmt(v["perfect_settled_pln_per_mw_year"], "pln"),
+                 fmt(v["perfect_best_response_pln_per_mw_year"], "pln"),
+                 f"{fmt(v['retention_settled'], 'pct0')} to {fmt(v['retention_best_response'], 'pct0')}",
+                 fmt(v["stack_asof_settled_pln_per_mw_year"], "pln"), fmt(v["stack_asof_best_response_pln_per_mw_year"], "pln"),
+                 fmt(v["da_asof_pln_per_mw_year"], "pln")] for k, v in s["saturation"]["rows"].items()]
+        return _md(["Fleet, MW", "Perfect foresight, settled", "Perfect foresight, best response", "Kept of the lone battery",
+                    "Stack as-of, settled", "Stack as-of, best response", "Day-ahead as-of"], rows,
+                   "---:|---:|---:|---:|---:|---:|---:")
     if name == "sensitivity":
         fs = s["forecast_sensitivity"]
         lbs = sorted({int(k.split("_")[1]) for k in fs})
@@ -138,8 +150,9 @@ def table(name: str, s: dict) -> str:
                 ["Offered availability (bids)", fmt(t["availability_offered"], "pct"), "", ""],
                 ["RTE, mean of months, SoC-corrected", fmt(t["rte"], "pct"), fmt(g["rte"], "pct0"),
                  f"{t['rte_ok_months']} of {t['rte_ok_assessed']} months"],
-                ["Cycles per year (EFC)", fmt(t["efc_per_year"], "num1"), fmt(g["efc_per_year"], "int"),
+                ["Cycles per year (EFC, registered energy)", fmt(t["efc_per_year"], "num1"), fmt(g["efc_per_year"], "int"),
                  f"{t['cycles_ok_months']} of {t['cycles_ok_assessed']} months"],
+                ["Cycles per year against the usable energy window", fmt(t["efc_per_year_usable"], "num1"), "", ""],
                 ["Technical outage, hours per year", fmt(t["technical_outage_hours_per_year"], "num1"), "", ""],
                 ["Usable energy window trend, % per year", fmt(t["usable_energy_trend_pct_per_year"], "num2"), "", ""],
                 ["Modelled state of health after one year", fmt(t["soh_year1"], "pct"), "", ""],
@@ -177,7 +190,7 @@ def lint(template: str) -> list[str]:
     t = re.sub(r"\]\([^)]*\)", "]", t)
     t = re.sub(r"https?://\S+", "", t)
     t = re.sub(r"<[^>]*>", "", t)
-    return [line.strip() for line in t.splitlines() if DIGIT.search(line)]
+    return [line.strip() for line in t.splitlines() if DIGIT.search(line) or NUMBER_WORD.search(line)]
 
 
 def write(root: Path, check: bool = False) -> int:

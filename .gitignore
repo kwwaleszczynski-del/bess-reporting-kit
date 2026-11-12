@@ -8,3 +8,5 @@ run.log
 build/
 dist/
 sat.log
+runs.pkl
+*.pkl

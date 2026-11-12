@@ -34,8 +34,7 @@ log = logging.getLogger(__name__)
 STEP_MARKET, STEP_RTE = "Market vs prior year", "RTE vs nameplate"
 STEP_AVAILABILITY, STEP_FIXED = "Availability vs budget", "Fixed costs vs budget"
 INFORMATION = {
-    "stack_act_perfect": "prices of the delivery day, all products, aFRR activation ex post (ceiling)",
-    "stack_act_asof": "as the stack, activation priced ex post with pro-rata activation",
+    "stack_act_asof": "as the stack; activation priced ex post, state of charge and cycles not enforced",
     "da_perfect": "prices of the delivery day (ceiling, not tradeable)",
     "da_asof": "day-ahead prices of the previous 7 days",
     "stack_perfect": "prices of the delivery day, all products (ceiling, not tradeable)",
@@ -43,12 +42,11 @@ INFORMATION = {
     "toll": "contract terms",
     "cm": "day-ahead prices of the previous 7 days, contract terms",
 }
-SHORT = {"stack_act_perfect": "Stack + aFRR energy, perfect foresight", "stack_act_asof": "Stack + aFRR energy, as-of",
+SHORT = {"stack_act_asof": "Stack + aFRR energy, as-of (upper bound)",
          "da_perfect": "DA arbitrage, perfect foresight", "da_asof": "DA arbitrage, as-of",
          "stack_perfect": "Stack, perfect foresight", "stack_asof": "Stack, as-of", "toll": "Tolling"}
 LABELS = {
-    "stack_act_perfect": "Revenue stack with aFRR activation, perfect foresight",
-    "stack_act_asof": "Revenue stack with aFRR activation, as-of forecast",
+    "stack_act_asof": "Revenue stack with aFRR activation, as-of forecast (upper bound)",
     "da_perfect": "Day-ahead arbitrage, perfect foresight",
     "da_asof": "Day-ahead arbitrage, as-of forecast",
     "stack_perfect": "Revenue stack, perfect foresight",
@@ -79,10 +77,15 @@ def run_all(site: Site, days: list[DayData], workers: int = 1) -> dict[str, pd.D
 
 
 def with_activation(site: Site, runs: dict[str, pd.DataFrame], prices: pd.DataFrame, activation: dict) -> dict:
-    """Add ``stack_act_perfect`` and ``stack_act_asof``: the stack runs with the net margin of aFRR activation
+    """Add ``stack_act_asof``: the as-of stack run with the net margin of aFRR activation
     (``bess_stack.activation``: pro-rata activation of the capacity bought, up energy paid the aFRR up price and
     bought back at the day-ahead price with losses, down energy absorbed at the aFRR down price and sold at the
-    day-ahead price, ex post on published data) in an ``afrr_energy`` column."""
+    day-ahead price, ex post on published data) in an ``afrr_energy`` column.
+
+    This is an upper bound, not a strategy: the plan does not know about the activation, and neither the state of
+    charge nor the cycle limit is enforced on it (the energy rebalanced at the day-ahead price of the same
+    quarter-hour). ``attrs["activation"]`` keeps the daily activated energy so that the report can say how often it
+    could not have been delivered. There is no perfect-foresight twin, so there is no ceiling to take a share of."""
     from bess_stack.activation import activation_ratio, activation_revenue
     from bess_stack.backtest import Day
 
@@ -97,7 +100,7 @@ def with_activation(site: Site, runs: dict[str, pd.DataFrame], prices: pd.DataFr
     afrr_price = unit(activation["afrr_price"])
     params = site.battery.params()
     out = dict(runs)
-    for mode in ("perfect", "asof"):
+    for mode in ("asof",):
         base = runs[f"stack_{mode}"]
         hour_of = {}
         for d in base.index:
@@ -110,8 +113,44 @@ def with_activation(site: Site, runs: dict[str, pd.DataFrame], prices: pd.DataFr
         new = base.copy()
         new["afrr_energy"] = act.set_index("business_date")["margin"].reindex(new.index).to_numpy()
         new.attrs = dict(base.attrs)
+        new.attrs["activation"] = act.set_index("business_date")
         out[f"stack_act_{mode}"] = new
     return out
+
+
+def stack_profile(site: Site, daily: pd.DataFrame) -> dict:
+    """What the as-of stack does in physical terms: the mean power offered upward and downward in every hour (the sum
+    of the up or down products), the share of hours with more than the battery's power offered upward, and the
+    arbitrage that is left (cycles per day)."""
+    from bess_report.data import DOWN, PRODUCTS, UP
+
+    up_idx = [PRODUCTS.index(p) for p in UP]
+    dn_idx = [PRODUCTS.index(p) for p in DOWN]
+    up = np.concatenate([r[:, up_idx].sum(axis=1) for r in daily.attrs["reserves"].values()])
+    dn = np.concatenate([r[:, dn_idx].sum(axis=1) for r in daily.attrs["reserves"].values()])
+    b = site.battery
+    usable = b.energy_mwh * (b.soc_max - b.soc_min)
+    return {"mean_up_mw": float(up.mean()), "mean_down_mw": float(dn.mean()),
+            "share_hours_up_above_power": float((up > b.power_mw + 1e-6).mean()),
+            "max_up_mw": float(up.max()), "arbitrage_cycles_per_day": float(daily["discharged_mwh"].mean() / usable),
+            "arbitrage_mwh_per_year": float(daily["discharged_mwh"].sum() * 365.0 / len(daily))}
+
+
+def activation_diagnostics(site: Site, daily: pd.DataFrame) -> dict:
+    """How much energy the activation variant asks of the battery: yearly activated energy up and down, the plan's own
+    arbitrage discharge, and the days on which the net activated energy exceeds the state-of-charge reserve between
+    the starting level and the nearer limit (it could not have been delivered)."""
+    act = daily.attrs["activation"]
+    b = site.battery
+    reserve = min(b.soc_start - b.soc_min, b.soc_max - b.soc_start) * b.energy_mwh
+    net = (act["energy_up_mwh"] - act["energy_down_mwh"]).abs()
+    n = len(act)
+    return {"days": n, "reserve_mwh": float(reserve),
+            "up_mwh_per_year": float(act["energy_up_mwh"].sum() * 365.0 / n),
+            "down_mwh_per_year": float(act["energy_down_mwh"].sum() * 365.0 / n),
+            "arbitrage_mwh_per_year": float(daily["discharged_mwh"].sum() * 365.0 / n),
+            "days_net_above_reserve": int((net > reserve).sum()),
+            "max_daily_net_mwh": float(net.max())}
 
 
 def capacity_market_terms(auction: int) -> dict:
@@ -150,7 +189,7 @@ def compare(site: Site, runs: dict[str, pd.DataFrame], availability: float | Non
         r.update(id=name, information=INFORMATION[name], market_risk="owner")
         r["cycles_per_day"] = float(d["discharged_mwh"].sum() / days / usable)
         rows.append(r)
-    ceilings = {"da_asof": "da_perfect", "stack_asof": "stack_perfect", "stack_act_asof": "stack_act_perfect"}
+    ceilings = {"da_asof": "da_perfect", "stack_asof": "stack_perfect"}
     index = pd.Index(margins["da_asof"].index)
     if site.toll:
         toll = pd.Series([site.toll["pln_per_mw_year"] * mw / 12.0 * a] * len(index), index=index)
@@ -240,8 +279,8 @@ def simulate_year(site: Site, days: list[DayData], runs: dict[str, pd.DataFrame]
     nominal = _lines(runs["stack_asof"])
     measured = _lines(run_strategy(days, "stack", "asof", site.battery, site.first_day, site.last_day,
                                    rte_by_month=rte_by_month, workers=workers))
-    prev_first, prev_last = (site.first_day.replace(year=site.first_day.year - 1),
-                             site.last_day.replace(year=site.last_day.year - 1))
+    prev_first = (pd.Timestamp(site.first_day) - pd.DateOffset(years=1)).date()      # 29 February -> 28 February
+    prev_last = (pd.Timestamp(site.last_day) - pd.DateOffset(years=1)).date()
     prior = _lines(run_strategy(days, "stack", "asof", site.battery, prev_first, prev_last, workers=workers))
     prior.index = months
 
