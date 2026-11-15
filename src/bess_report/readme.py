@@ -7,7 +7,8 @@ Placeholders in the template:
     {{table:name}}              a Markdown table built from the summary (strategies, bridge, mix, nem, ems)
 
 ``lint`` rejects a template that contains a number written by hand, in digits or as a word (two, seven, hundred,
-half, twice...), outside code, links and placeholders, so a figure cannot drift away from the results. The test suite checks that README.md equals the rendering of the template.
+half, twice...), outside code, links and placeholders, so a figure cannot drift away from the results. The test suite checks that README.md equals the rendering
+of the template.
 
 Usage:
     python -m bess_report readme            # write README.md

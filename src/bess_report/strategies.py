@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import logging
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import date
 
 import numpy as np

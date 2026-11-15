@@ -20,7 +20,6 @@ Usage:
 from __future__ import annotations
 
 import logging
-from dataclasses import replace
 from datetime import date
 
 import numpy as np
@@ -28,7 +27,7 @@ import pandas as pd
 
 from bess_report.financial import Bridge, statement
 from bess_report.schema import FIXED_COST_LINES, Site
-from bess_report.strategies import LOOKBACK_DAYS, REVENUE_COLUMNS, DayData, margin, run_strategy
+from bess_report.strategies import LOOKBACK_DAYS, DayData, margin, run_strategy
 
 log = logging.getLogger(__name__)
 STEP_MARKET, STEP_RTE = "Market vs prior year", "RTE vs nameplate"

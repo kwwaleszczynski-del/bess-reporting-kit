@@ -39,7 +39,7 @@ LOOKBACK = 7
 
 
 def _solve(task):
-    from bess_stack.optimizer import STRATEGIES, BatteryParams, optimize_day
+    from bess_stack.optimizer import STRATEGIES, optimize_day
 
     plan_prices, actual, params = task
     res = optimize_day(plan_prices, np.zeros(len(plan_prices), int), np.full((1, 7), np.nan), params,

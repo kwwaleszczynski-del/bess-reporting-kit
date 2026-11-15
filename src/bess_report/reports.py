@@ -20,6 +20,7 @@ from bess_report.render import fmt, img, note, page, section, table_html, tiles,
 from bess_report.schema import LINES, REVENUE_LINES
 from bess_report.technical import TechnicalReport
 
+
 def save_figures(figs: dict, out_dir: Path, prefix: str) -> dict:
     """Draw every chart (``figs``: name -> function returning a figure) in the light and the dark theme into
     ``out_dir/img/<prefix>_<name>.png`` and ``..._dark.png``; returns name -> path of the light one."""
@@ -118,7 +119,7 @@ def technical_report(rep: TechnicalReport, guarantees: dict | None, out_dir: Pat
     if rep.soh is not None:
         sheets["State of health"] = rep.soh
     if res is not None:
-        from bess_ops.report import ld_table, violation_table
+        from bess_ops.report import violation_table
         month = rep.monthly.index[-1]
         sections.append(section("Warranty violations (all)", table_html(
             violation_table(res, month) if len(res["violations"]) else pd.DataFrame({"none": []}), index=False)))

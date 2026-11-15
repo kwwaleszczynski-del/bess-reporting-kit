@@ -10,7 +10,7 @@ from openpyxl import load_workbook
 
 from bess_report import figures as F
 from bess_report import readme, reports
-from bess_report.financial import Bridge, statement
+from bess_report.financial import statement
 from bess_report.render import fmt, page, table_html
 from bess_report.schema import read_money
 from bess_report.technical import TechnicalReport
@@ -159,7 +159,7 @@ def test_forecast_sensitivity_default_row_is_the_main_result(summary):
 
 def test_activation_variant_in_the_results(summary):
     st = summary["strategies"]
-    assert st["stack_act_asof"]["pln_per_mw_year"] > st["stack_asof"]["pln_per_mw_year"]      
+    assert st["stack_act_asof"]["pln_per_mw_year"] > st["stack_asof"]["pln_per_mw_year"]
     assert st["stack_act_asof"]["share_of_ceiling"] is None and "stack_act_perfect" not in st      # no ceiling for an upper bound
 
 

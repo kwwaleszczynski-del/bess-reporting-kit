@@ -91,13 +91,13 @@ def test_run_strategy_end_to_end_does_not_see_the_delivery_day(days):
 
 
 def test_recomputation_reproduces_the_committed_daily_margins(days, site):
-    import pandas as pd
     from pathlib import Path
+
+    import pandas as pd
     ref = pd.read_csv(Path(__file__).resolve().parents[1] / "results/strategy_daily_margin.csv", index_col=0)
     ref.index = pd.to_datetime(ref.index).date
     d0 = date(2026, 3, 1)
     got = S.run_strategy(days, "stack", "asof", site.battery, d0, date(2026, 3, 3))
-    a = site.guarantees["availability"]
     for d, m in S.margin(got).items():
         assert m == pytest.approx(ref.loc[d, "stack_asof"], rel=1e-6)
     assert len(got) == 3

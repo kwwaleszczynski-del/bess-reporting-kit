@@ -26,7 +26,7 @@ from bess_report.financial import revenue_mix, variance
 from bess_report.nemslice import load_slice
 from bess_report.schema import LINES, load_site
 from bess_report.strategies import LOOKBACK_DAYS, build_days, margin
-from bess_report.technical import analyse_ems, from_ems, from_nem
+from bess_report.technical import from_ems, from_nem
 
 log = logging.getLogger(__name__)
 NEM_DUID = "RANGEB1"

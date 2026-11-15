@@ -49,6 +49,7 @@ def test_incomplete_slice_is_reported(tmp_path):
 @pytest.fixture(scope="module")
 def ems():
     import tempfile
+
     from bess_report.example import ems_demo
     with tempfile.TemporaryDirectory() as tmp:
         return T.from_ems(ems_demo(Path(tmp)))

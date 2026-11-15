@@ -17,10 +17,10 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
-from matplotlib.figure import Figure  # noqa: E402
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.figure import Figure
 
 plt.rcParams.update({"font.size": 12, "axes.titlesize": 13.5, "axes.labelsize": 12, "axes.spines.top": False,
                      "axes.spines.right": False, "figure.dpi": 100, "savefig.dpi": 130})
